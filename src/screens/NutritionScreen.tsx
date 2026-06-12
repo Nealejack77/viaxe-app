@@ -389,6 +389,23 @@ export default function NutritionScreen() {
     }
   }, [logs, date]);
 
+  // ── Recents: shown before the user types — last week's foods are today's ─────
+  const loadRecents = useCallback(async () => {
+    try {
+      const token = await getToken();
+      if (!token || token === 'demo') return;
+      const res = await fetch(`${BASE}/foods?recent=1`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        const foods: ViaxeFood[] = data.foods || [];
+        if (foods.length) {
+          setSearchResults(foods);
+          setSearchMsg('RECENT — foods you logged before');
+        }
+      }
+    } catch {}
+  }, []);
+
   // ── Search ────────────────────────────────────────────────────────────────────
   const runSearch = useCallback(async () => {
     if (!searchQ.trim()) return;
@@ -471,6 +488,7 @@ export default function NutritionScreen() {
     setSearchQ(''); setSearchResults([]); setSearchMsg('');
     setManualBarcode(''); setScanMsg(''); setScanned(false); setScanLoading(false);
     setMf({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', grams: '100', unit: 'g' });
+    loadRecents();
   };
   const closeModal = () => { setAddMeal(null); setDraft(null); };
 
@@ -635,7 +653,7 @@ export default function NutritionScreen() {
                       {!!searchMsg && !searchLoading && <Text style={s.msgTxt}>{searchMsg}</Text>}
                       {!searchQ.trim() && !searchLoading && !searchMsg && (
                         <Text style={[s.msgTxt, { fontStyle: 'italic' }]}>
-                          Search 250+ verified UK foods — chicken, oats, rice, salmon…
+                          Search 380+ UK foods — supermarket brands, takeaways, whole foods…
                         </Text>
                       )}
 
