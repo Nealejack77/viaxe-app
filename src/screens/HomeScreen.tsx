@@ -4,42 +4,12 @@ import {
   Animated, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore } from '../store/useAppStore';
 import { getDayWorkout } from '../data/workouts';
-import { PlayIcon, CheckIcon, BellIcon, ClipboardIcon } from '../components/Icons';
-
-function ReadinessRing({ score, t }: { score: number | null; t: Tokens }) {
-  if (score === null) return null;
-  const r = 50;
-  const circ = 2 * Math.PI * r;
-  const progress = (score / 100) * circ;
-
-  const statusColor =
-    score >= 85 ? t.green : score >= 70 ? t.gold : t.red;
-  const statusLabel =
-    score >= 85 ? 'OPTIMAL' : score >= 70 ? 'MODERATE' : 'REST TODAY';
-
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <Svg width={120} height={120} viewBox="0 0 120 120">
-        <Circle cx={60} cy={60} r={r} fill="none" stroke={t.border} strokeWidth={10} />
-        <Circle
-          cx={60} cy={60} r={r} fill="none"
-          stroke={t.red} strokeWidth={10} strokeLinecap="round"
-          strokeDasharray={`${progress} ${circ}`}
-          rotation={-90} originX={60} originY={60}
-        />
-        <SvgText x={60} y={55} textAnchor="middle" fill={t.text} fontSize={32} fontWeight="900">{score}</SvgText>
-        <SvgText x={60} y={70} textAnchor="middle" fill={t.textMuted} fontSize={9} letterSpacing={2}>READINESS</SvgText>
-        <SvgText x={60} y={84} textAnchor="middle" fill={statusColor} fontSize={9} fontWeight="700" letterSpacing={2}>{statusLabel}</SvgText>
-      </Svg>
-    </View>
-  );
-}
+import { PlayIcon, BellIcon, ClipboardIcon, ActivityIcon, AwardIcon, TrendingUpIcon } from '../components/Icons';
 
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.bg },
@@ -81,6 +51,33 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   missionTag: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: t.gold, marginBottom: 2 },
   missionTitle: { fontSize: 14, fontWeight: '800', color: t.text, letterSpacing: -0.2 },
   missionMeta: { fontSize: 10.5, color: t.textMuted, marginTop: 1 },
+
+  // Journey card
+  journeyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  journeyGoal: { fontSize: 18, fontWeight: '900', color: t.text, letterSpacing: -0.4, marginTop: 3 },
+  journeyPct: { fontSize: 26, fontWeight: '900', color: t.red, fontFamily: 'Menlo' },
+  journeyPctLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted, textAlign: 'right' },
+  journeyBarTrack: { height: 8, borderRadius: 4, backgroundColor: t.border, overflow: 'hidden', marginBottom: 8 },
+  journeyBarFill: { height: 8, borderRadius: 4, backgroundColor: t.red },
+  journeyEnds: { flexDirection: 'row', justifyContent: 'space-between' },
+  journeyEnd: { fontSize: 10, color: t.textMuted, fontFamily: 'Menlo' },
+  journeyWhy: { fontSize: 12, color: t.textSec, fontStyle: 'italic', lineHeight: 18, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.border },
+  journeyMilestone: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  journeyMilestoneTxt: { fontSize: 11.5, color: t.textSec, flex: 1 },
+
+  // Coach feedback card
+  coachCard: { backgroundColor: 'rgba(52,199,89,0.06)', borderColor: 'rgba(52,199,89,0.2)', borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 12 },
+  coachTag: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.green, marginBottom: 6 },
+  coachQuote: { fontSize: 13, color: t.textSec, lineHeight: 20 },
+
+  // Timeline
+  tlRow: { flexDirection: 'row', gap: 12, marginBottom: 2 },
+  tlRail: { width: 30, alignItems: 'center' },
+  tlDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder },
+  tlLine: { flex: 1, width: 1.5, backgroundColor: t.border, marginVertical: 3 },
+  tlBody: { flex: 1, paddingBottom: 16 },
+  tlTitle: { fontSize: 13, fontWeight: '700', color: t.text, letterSpacing: -0.2 },
+  tlMeta: { fontSize: 10.5, color: t.textMuted, marginTop: 2 },
 });
 
 export default function HomeScreen() {
@@ -109,6 +106,46 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? 'GOOD MORNING' : hour < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+
+  // ── Journey math: start → current → goal weight ──────────────────────────
+  const startW = store.profile.startWeight ?? store.weightLog[0]?.weight ?? null;
+  const goalW  = store.profile.goalWeight ?? null;
+  const curW   = store.currentWeight || null;
+  const journeyPct = (startW != null && goalW != null && curW != null && startW !== goalW)
+    ? Math.max(0, Math.min(100, Math.round(((startW - curW) / (startW - goalW)) * 100)))
+    : null;
+  const kgRemaining = (goalW != null && curW != null) ? Math.abs(curW - goalW) : null;
+  const nextMilestone = journeyPct === null ? null
+    : journeyPct >= 100 ? 'Goal reached — time to set the next one with your coach 🏆'
+    : journeyPct >= 75 ? 'Final quarter. The last stretch is where it counts.'
+    : journeyPct >= 50 ? `Next milestone: 75% of the way (${kgRemaining?.toFixed(1)}kg to goal).`
+    : journeyPct >= 25 ? 'Next milestone: halfway point.'
+    : 'First milestone: 25% of the way there.';
+
+  // Latest coach voice — workout feedback or check-in reply, whichever is newer
+  const fbSession = store.sessions.find(x => x.coachFeedback?.text);
+  const fbCheckIn = store.checkIns.find(x => x.coachReply?.text);
+  const latestCoachNote =
+    fbSession && fbCheckIn
+      ? (new Date(fbSession.date) >= new Date(fbCheckIn.createdAt) ? fbSession.coachFeedback!.text : fbCheckIn.coachReply!.text)
+      : fbSession?.coachFeedback?.text ?? fbCheckIn?.coachReply?.text ?? null;
+
+  // Journey timeline — workouts and check-ins merged, newest first
+  type TimelineEvent = { key: string; kind: 'workout' | 'checkin' | 'milestone'; title: string; meta: string; date: string };
+  const timeline: TimelineEvent[] = [
+    ...store.sessions.slice(0, 6).map(sess => ({
+      key: `w-${sess.id}`, kind: 'workout' as const,
+      title: sess.workoutName,
+      meta: `${sess.date} · ${sess.duration} min · ${sess.setsCompleted} sets${sess.coachFeedback ? ' · ✓ reviewed' : ''}`,
+      date: sess.date,
+    })),
+    ...store.checkIns.slice(0, 3).map(ci => ({
+      key: `c-${ci.id}`, kind: 'checkin' as const,
+      title: 'Weekly check-in',
+      meta: `${ci.createdAt.split('T')[0]}${ci.weight ? ` · ${ci.weight}kg` : ''}${ci.coachReply ? ' · coach replied' : ''}`,
+      date: ci.createdAt.split('T')[0],
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
 
   const todayWorkoutExCount = store.programDays.length > 0
     ? store.programDays[0]?.exercises?.length ?? 0
@@ -149,30 +186,48 @@ export default function HomeScreen() {
               <Text style={s.greetName}>{store.userName} {store.streak > 7 ? '🔥' : '👋'}</Text>
             </View>
 
-            {/* Readiness card */}
-            {store.readiness !== null ? (
-              <View style={s.card}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                  <ReadinessRing score={store.readiness} t={t} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.cardLabel}>TODAY'S READINESS</Text>
-                    <Text style={s.bigNum}>{store.readiness}<Text style={s.bigNumSub}>/100</Text></Text>
-                    <Text style={{ fontSize: 11, color: t.textSec, lineHeight: 17, marginTop: 6 }}>
-                      {store.sessions.length > 0
-                        ? `Based on ${store.sessions.length} logged session${store.sessions.length !== 1 ? 's' : ''}.`
-                        : 'Log workouts to track your training readiness.'}
-                    </Text>
-                  </View>
+            {/* Journey card — goal, progress, next milestone, your why */}
+            <View style={s.card}>
+              <View style={s.journeyTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.cardLabel}>YOUR JOURNEY</Text>
+                  <Text style={s.journeyGoal}>{store.profile.mainGoal || 'Set your goal with your coach'}</Text>
                 </View>
+                {journeyPct !== null && (
+                  <View>
+                    <Text style={s.journeyPct}>{journeyPct}%</Text>
+                    <Text style={s.journeyPctLabel}>COMPLETE</Text>
+                  </View>
+                )}
               </View>
-            ) : (
-              <View style={s.card}>
-                <Text style={s.cardLabel}>TODAY'S READINESS</Text>
-                <Text style={{ fontSize: 13, color: t.textMuted, marginTop: 6, lineHeight: 18 }}>
-                  Readiness not tracked yet. Connect a wearable or check in with your coach.
+
+              {journeyPct !== null ? (
+                <>
+                  <View style={s.journeyBarTrack}>
+                    <View style={[s.journeyBarFill, { width: `${Math.max(journeyPct, 2)}%` }]} />
+                  </View>
+                  <View style={s.journeyEnds}>
+                    <Text style={s.journeyEnd}>{startW?.toFixed(1)}kg</Text>
+                    <Text style={[s.journeyEnd, { color: t.text, fontWeight: '700' }]}>{curW?.toFixed(1)}kg</Text>
+                    <Text style={s.journeyEnd}>{goalW?.toFixed(1)}kg</Text>
+                  </View>
+                  {nextMilestone && (
+                    <View style={s.journeyMilestone}>
+                      <TrendingUpIcon size={13} color={t.gold} strokeWidth={2.2} />
+                      <Text style={s.journeyMilestoneTxt}>{nextMilestone}</Text>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={{ fontSize: 12.5, color: t.textMuted, lineHeight: 18 }}>
+                  Log your weight and set a target to see your progress here.
                 </Text>
-              </View>
-            )}
+              )}
+
+              {store.profile.whyGoal ? (
+                <Text style={s.journeyWhy}>"{store.profile.whyGoal}"</Text>
+              ) : null}
+            </View>
 
             {/* Weekly check-in mission */}
             {store.clientId && store.checkInDue && (
@@ -200,7 +255,7 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 22 }}>{workout.emoji}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.sessTag}>TODAY'S TRAINING</Text>
+                  <Text style={s.sessTag}>TODAY'S MISSION</Text>
                   <Text style={s.sessName}>{todayWorkoutName}</Text>
                   <Text style={s.sessMeta}>{todayWorkoutExCount} exercises · {workout.duration} min · {workout.tag}</Text>
                 </View>
@@ -217,8 +272,8 @@ export default function HomeScreen() {
                 <Text style={s.statLabel}>🔥 STREAK</Text>
               </View>
               <View style={[s.statCard, { flex: 1 }]}>
-                <Text style={s.statVal}>{store.readiness !== null ? `${store.readiness}%` : '—'}</Text>
-                <Text style={s.statLabel}>READINESS</Text>
+                <Text style={s.statVal}>{kgRemaining !== null ? kgRemaining.toFixed(1) : '—'}</Text>
+                <Text style={s.statLabel}>KG TO GOAL</Text>
               </View>
               <View style={[s.statCard, { flex: 1 }]}>
                 <Text style={s.statVal}>{store.currentWeight}</Text>
@@ -235,18 +290,33 @@ export default function HomeScreen() {
               <Text style={s.ariaText}>"{insight}"</Text>
             </View>
 
-            {/* Recent sessions */}
-            {store.sessions.length > 0 && (
+            {/* Latest word from the coach */}
+            {latestCoachNote && (
+              <View style={[s.coachCard, { marginTop: 12 }]}>
+                <Text style={s.coachTag}>FROM {store.coachName.toUpperCase()}</Text>
+                <Text style={s.coachQuote}>"{latestCoachNote}"</Text>
+              </View>
+            )}
+
+            {/* Journey timeline */}
+            {timeline.length > 0 && (
               <View style={{ marginTop: 12 }}>
-                <Text style={[s.cardLabel, { marginBottom: 10 }]}>RECENT SESSIONS</Text>
-                {store.sessions.slice(-3).reverse().map(sess => (
-                  <View key={sess.id} style={[s.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }]}>
-                    <View style={s.sessionIconWrap}>
-                      <CheckIcon size={18} color={t.red} />
+                <Text style={[s.cardLabel, { marginBottom: 12 }]}>JOURNEY TIMELINE</Text>
+                {timeline.map((ev, i) => (
+                  <View key={ev.key} style={s.tlRow}>
+                    <View style={s.tlRail}>
+                      <View style={s.tlDot}>
+                        {ev.kind === 'workout'
+                          ? <ActivityIcon size={13} color={t.red} strokeWidth={2.2} />
+                          : ev.kind === 'checkin'
+                            ? <ClipboardIcon size={13} color={t.gold} strokeWidth={2.2} />
+                            : <AwardIcon size={13} color={t.gold} strokeWidth={2.2} />}
+                      </View>
+                      {i < timeline.length - 1 && <View style={s.tlLine} />}
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.sessionName}>{sess.workoutName}</Text>
-                      <Text style={s.sessionMeta}>{sess.date} · {sess.duration} min · {sess.setsCompleted} sets</Text>
+                    <View style={s.tlBody}>
+                      <Text style={s.tlTitle}>{ev.title}</Text>
+                      <Text style={s.tlMeta}>{ev.meta}</Text>
                     </View>
                   </View>
                 ))}
