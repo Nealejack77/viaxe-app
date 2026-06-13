@@ -152,6 +152,7 @@ interface AppState {
   macroTargets: MacroTargets;
   programDays: ProgramDay[];
   clientId: string | null;
+  localClientId: string | null;
   ptId: string | null;
   profile: UserProfile;
   messages: Message[];
@@ -179,6 +180,7 @@ const SEED: AppState = {
   macroTargets: { calories: 2200, protein: 175, carbs: 220, fat: 70 },
   programDays: [],
   clientId: null,
+  localClientId: null,
   ptId: null,
   profile: EMPTY_PROFILE,
   messages: [],
@@ -219,6 +221,7 @@ const DEMO_SEED: AppState = {
   coachName: 'James Miller',
   macroTargets: { calories: 2600, protein: 195, carbs: 280, fat: 75 },
   clientId: null,
+  localClientId: null,
   ptId: null,
   profile: { ...EMPTY_PROFILE, email: 'jack@demo.com', heightCm: 180, goalWeight: 80, mainGoal: 'Muscle gain', onboarded: true },
   messages: [],
@@ -309,6 +312,7 @@ export function useAppStore() {
           if (profile?.name) updates.userName = profile.name.split(' ')[0] || profile.name;
           if (profile?.coachName) updates.coachName = profile.coachName;
           if (profile?._id) updates.clientId = String(profile._id);
+          if (profile?.localId != null) updates.localClientId = String(profile.localId);
           if (profile?.ptId) updates.ptId = String(profile.ptId);
 
           // Extended profile fields from /api/auth?action=me
@@ -352,7 +356,8 @@ export function useAppStore() {
             const clientRecord = ptData?.clients?.find(
               (c: any) =>
                 c.email?.toLowerCase() === currentState.profile.email?.toLowerCase() ||
-                c.clientId === currentState.clientId
+                (currentState.clientId && c.clientId && c.clientId === currentState.clientId) ||
+                (currentState.localClientId != null && c.id != null && String(c.id) === currentState.localClientId)
             );
             const progUpdates: Partial<AppState> = {};
             const mapDays = (days: any[]) =>
