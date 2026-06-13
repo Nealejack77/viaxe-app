@@ -378,6 +378,24 @@ export function useAppStore() {
                   progUpdates.programDays = mapDays(days);
                 }
               }
+              // Secondary fallback: clientRecord found but program name lookup missed.
+              // Search programs.assignedClients for the client's local numeric id
+              // (portal stores numeric local IDs, not Mongo auth _id).
+              if (!progUpdates.programDays?.length) {
+                const byIdProg = (ptData?.programs as any[] | undefined)?.find((p: any) =>
+                  Array.isArray(p.assignedClients) && (
+                    (clientRecord.id != null && p.assignedClients.some((id: any) => String(id) === String(clientRecord.id))) ||
+                    (clientRecord.clientId && p.assignedClients.some((id: any) => String(id) === String(clientRecord.clientId)))
+                  )
+                );
+                if (byIdProg) {
+                  const byIdDays = ptData?.program_days?.[byIdProg.name] ?? byIdProg.days;
+                  if (Array.isArray(byIdDays) && byIdDays.length > 0) {
+                    progUpdates.assignedProgram = byIdProg.name;
+                    progUpdates.programDays = mapDays(byIdDays);
+                  }
+                }
+              }
               const m = clientRecord.macros;
               if (m) {
                 progUpdates.macroTargets = {
@@ -388,10 +406,9 @@ export function useAppStore() {
                 };
               }
             }
-            // Fallback: search programs.assignedClients directly using the client's
-            // Mongo auth ID. Handles divergence between coach_clients.program and
-            // programs.assignedClients (e.g. atomic PATCH assignment without coach
-            // portal sync, or clientRecord not found via email/clientId).
+            // Fallback: clientRecord not found — search programs.assignedClients directly.
+            // Server enriches assignedClients with both numeric local IDs and Mongo auth _ids,
+            // so either currentState.clientId or a numeric match will hit.
             if (!progUpdates.programDays?.length && currentState.clientId) {
               const fallbackProg = (ptData?.programs as any[] | undefined)?.find((p: any) =>
                 Array.isArray(p.assignedClients) &&
