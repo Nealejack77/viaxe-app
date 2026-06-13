@@ -67,7 +67,17 @@ function AppInner() {
   const handleLogin = () => setAuth('in');
 
   const handleLogout = async () => {
-    await AsyncStorage.multiRemove(['@viaxe_token', '@viaxe_username']);
+    // Clear EVERY app-owned key, not just the token. Leaving @viaxe_v2 behind
+    // kept the previous user's cached program/macros/profile in storage, which
+    // the next mount of useAppStore would rehydrate. Theme pref is preserved.
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const toClear = keys.filter(k => k.startsWith('@viaxe') && k !== '@viaxe_theme');
+      const known = ['@viaxe_token', '@viaxe_username', '@viaxe_v2'];
+      await AsyncStorage.multiRemove([...new Set([...toClear, ...known])]);
+    } catch {
+      await AsyncStorage.multiRemove(['@viaxe_token', '@viaxe_username', '@viaxe_v2']);
+    }
     setAuth('out');
   };
 

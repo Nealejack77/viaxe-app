@@ -10,6 +10,7 @@ import { useTheme, Tokens, ThemeMode } from '../context/ThemeContext';
 import { useAppStore, UserProfile } from '../store/useAppStore';
 import { XIcon } from '../components/Icons';
 import { RootStackParamList } from '../../App';
+import { confirm } from '../utils/confirm';
 
 type Props = StackScreenProps<RootStackParamList, 'Profile'> & { onLogout: () => void };
 
@@ -144,11 +145,10 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
     setTimeout(() => setSaved(false), 2000);
   }, [email, phone, dob, gender, heightCm, goalWeight, mainGoal, injuries, nutrition, availability]);
 
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: onLogout },
-    ]);
+  const handleLogout = async () => {
+    // confirm() works on web (where Alert.alert buttons are a no-op) and native.
+    const ok = await confirm('Log out', 'Are you sure you want to log out?', 'Log out', 'Cancel', true);
+    if (ok) onLogout();
   };
 
   const [prefs, setPrefs] = useState<Record<string, boolean>>(store.profile.notificationPrefs || {});

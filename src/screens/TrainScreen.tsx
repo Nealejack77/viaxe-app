@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  Alert, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform,
+  Modal, TextInput, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -202,6 +202,21 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   configRow: { flexDirection: 'row', gap: 10 },
   configInput: { flex: 1, backgroundColor: t.inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: t.text, borderWidth: 1, borderColor: t.border },
   configLabel: { fontSize: 9, color: t.textMuted, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
+  // Exercise selector chips (non-linear navigation)
+  chipBar: { paddingHorizontal: 20, paddingBottom: 10, gap: 8, flexDirection: 'row' },
+  chip: { minWidth: 40, height: 40, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: t.glassBorder, backgroundColor: t.glass, alignItems: 'center', justifyContent: 'center' },
+  chipActive: { borderColor: t.red, backgroundColor: t.redDim },
+  chipDone: { borderColor: 'rgba(52,199,89,0.35)', backgroundColor: 'rgba(52,199,89,0.10)' },
+  chipTxt: { fontSize: 13, fontWeight: '800', color: t.textMuted, fontFamily: 'Menlo' },
+  chipTxtActive: { color: t.red },
+  chipTxtDone: { color: t.green },
+  // Exit confirmation modal
+  exitCard: { backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, width: '100%' },
+  exitBtn: { padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  exitBtnTxt: { fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
+  finishBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 4, marginBottom: 8 },
+  finishBtnInner: { padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, borderColor: t.green, backgroundColor: t.glass },
+  finishBtnTxt: { fontSize: 13, fontWeight: '800', color: t.green, letterSpacing: 1 },
 });
 
 // ─── Workout Selector ─────────────────────────────────────────────────────────
@@ -419,6 +434,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
   const [restCount, setRestCount] = useState<number | null>(null);
   const [showComplete, setShowComplete] = useState(false);
   const [showAddEx, setShowAddEx] = useState(false);
+  const [showExit, setShowExit] = useState(false);
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [rpe, setRpe] = useState<number | undefined>(undefined);
 
@@ -470,6 +486,23 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
     else { setExerciseIdx(i => i + 1); scrollRef.current?.scrollTo({ y: 0, animated: true }); }
   }, [isLastExercise]);
 
+  // Non-linear navigation: jump straight to any exercise in any order.
+  const jumpToExercise = useCallback((i: number) => {
+    Haptics.selectionAsync();
+    setExerciseIdx(i);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  const buildPayload = useCallback((): WorkoutExercise[] => (
+    exercises.map(ex => ({
+      name: ex.name,
+      addedByClient: ex.addedByClient,
+      planned: ex.planned,
+      sets: ex.sets.map((s, i) => ({ setNumber: i + 1, reps: s.reps, weight: s.weight, completed: s.completed, notes: s.notes })),
+      notes: ex.notes,
+    }))
+  ), [exercises]);
+
   const handleFinish = useCallback(() => {
     const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.completed).length, 0);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -495,31 +528,24 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
     setExercises(prev => [...prev, newEx]);
   }, []);
 
+  const completedSets = exercises.reduce((a, e) => a + e.sets.filter(s => s.completed).length, 0);
+
+  // Open a real in-app modal — Alert.alert buttons are a no-op on web, which is
+  // why the client previously could not exit a started workout at all.
   const handleExit = useCallback(() => {
-    const completedSets = exercises.reduce((a, e) => a + e.sets.filter(s => s.completed).length, 0);
-    if (completedSets === 0) {
-      Alert.alert('Exit Workout?', 'No sets logged — exit without saving?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Exit', style: 'destructive', onPress: onExit },
-      ]);
-    } else {
-      Alert.alert('Exit Workout', `You have ${completedSets} set${completedSets !== 1 ? 's' : ''} logged.`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Save & Exit', onPress: () => {
-          // Save partial workout then exit
-          const exercisePayload: WorkoutExercise[] = exercises.map(ex => ({
-            name: ex.name,
-            addedByClient: ex.addedByClient,
-            planned: ex.planned,
-            sets: ex.sets.map((s, i) => ({ setNumber: i + 1, reps: s.reps, weight: s.weight, completed: s.completed, notes: s.notes })),
-            notes: ex.notes,
-          }));
-          onComplete(elapsed, exercisePayload, 'Exited early', undefined);
-        }},
-        { text: 'Discard & Exit', style: 'destructive', onPress: onExit },
-      ]);
-    }
-  }, [exercises, elapsed, onComplete, onExit]);
+    Haptics.selectionAsync();
+    setShowExit(true);
+  }, []);
+
+  const saveAndExit = useCallback(() => {
+    setShowExit(false);
+    onComplete(elapsed, buildPayload(), 'Exited early', undefined);
+  }, [elapsed, buildPayload, onComplete]);
+
+  const discardAndExit = useCallback(() => {
+    setShowExit(false);
+    onExit();
+  }, [onExit]);
 
   const activeSetIdx = ex?.sets.findIndex(s => !s.completed) ?? -1;
 
@@ -527,7 +553,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
     <View style={s.container}>
       <SafeAreaView edges={['top']}>
         <View style={s.trainHeader}>
-          <TouchableOpacity onPress={handleExit}>
+          <TouchableOpacity onPress={handleExit} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityLabel="Exit workout">
             <XIcon size={22} color={t.textSec} />
           </TouchableOpacity>
           <View style={{ alignItems: 'center' }}>
@@ -553,6 +579,26 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
             <Text style={s.lmLabel}>ELAPSED</Text>
           </View>
         </View>
+
+        {/* Exercise selector — tap any exercise, in any order */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipBar}>
+          {exercises.map((e, i) => {
+            const done = e.sets.length > 0 && e.sets.every(st => st.completed);
+            const active = i === exerciseIdx;
+            return (
+              <TouchableOpacity
+                key={e.id}
+                onPress={() => jumpToExercise(i)}
+                style={[s.chip, done && s.chipDone, active && s.chipActive]}
+                activeOpacity={0.8}
+              >
+                <Text style={[s.chipTxt, done && s.chipTxtDone, active && s.chipTxtActive]}>
+                  {done ? '✓' : i + 1}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </SafeAreaView>
 
       {restCount !== null && (
@@ -621,7 +667,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
                   <TouchableOpacity
                     onPress={() => logSet(setIdx)}
                     style={[s.logSetBtn, isDone && s.logSetBtnDone]}
-                    disabled={isDone || (setIdx !== activeSetIdx)}
+                    disabled={isDone}
                   >
                     {isDone
                       ? <CheckIcon size={16} color={t.green} strokeWidth={2.5} />
@@ -644,24 +690,34 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
           </View>
         )}
 
-        {/* Up next */}
-        {!isLastExercise && exercises.length > exerciseIdx + 1 && (
-          <View style={{ marginBottom: 12 }}>
-            <Text style={[s.exLabel, { marginBottom: 8 }]}>UP NEXT</Text>
-            {exercises.slice(exerciseIdx + 1).map((upEx, i) => (
-              <View key={upEx.id} style={s.queueItem}>
-                <Text style={s.queueNum}>{exerciseIdx + i + 2}</Text>
-                <Text style={s.queueName}>{upEx.name}{upEx.addedByClient ? ' ✦' : ''}</Text>
-                <Text style={s.queueMeta}>{upEx.planned.sets}×{upEx.planned.reps} · {upEx.planned.weight}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {/* All exercises — tap to jump to any, in any order */}
+        <View style={{ marginBottom: 12 }}>
+          <Text style={[s.exLabel, { marginBottom: 8 }]}>ALL EXERCISES</Text>
+          {exercises.map((qEx, i) => {
+            if (i === exerciseIdx) return null;
+            const qDone = qEx.sets.length > 0 && qEx.sets.every(st => st.completed);
+            const setsDone = qEx.sets.filter(st => st.completed).length;
+            return (
+              <TouchableOpacity key={qEx.id} style={s.queueItem} onPress={() => jumpToExercise(i)} activeOpacity={0.8}>
+                <Text style={[s.queueNum, qDone && { color: t.green }]}>{qDone ? '✓' : i + 1}</Text>
+                <Text style={s.queueName}>{qEx.name}{qEx.addedByClient ? ' ✦' : ''}</Text>
+                <Text style={s.queueMeta}>{setsDone}/{qEx.sets.length} · {qEx.planned.weight}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         {/* Add exercise */}
         <TouchableOpacity style={s.addExBtn} onPress={() => setShowAddEx(true)}>
           <PlusIcon size={16} color={t.textSec} />
           <Text style={s.addExTxt}>Add Exercise</Text>
+        </TouchableOpacity>
+
+        {/* Finish anytime — not gated on linear completion */}
+        <TouchableOpacity style={s.finishBtn} onPress={() => { Haptics.selectionAsync(); setShowComplete(true); }} activeOpacity={0.85}>
+          <View style={s.finishBtnInner}>
+            <Text style={s.finishBtnTxt}>FINISH WORKOUT{completedSets > 0 ? ` · ${completedSets} SETS` : ''}</Text>
+          </View>
         </TouchableOpacity>
       </ScrollView>
 
@@ -670,6 +726,34 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
         onClose={() => setShowAddEx(false)}
         onAdd={handleAddExercise}
       />
+
+      {/* Exit confirmation — real modal (Alert.alert buttons don't work on web) */}
+      <Modal visible={showExit} transparent animationType="slide" onRequestClose={() => setShowExit(false)}>
+        <View style={s.modalOverlay}>
+          <View style={s.exitCard}>
+            <Text style={s.modalTitle}>Exit Workout?</Text>
+            <Text style={s.modalSub}>
+              {completedSets > 0
+                ? `You have ${completedSets} set${completedSets !== 1 ? 's' : ''} logged. Save your progress or discard this session.`
+                : 'No sets logged yet. You can exit without saving.'}
+            </Text>
+
+            {completedSets > 0 && (
+              <TouchableOpacity onPress={saveAndExit} style={[s.exitBtn, { backgroundColor: t.red }]} activeOpacity={0.85}>
+                <Text style={[s.exitBtnTxt, { color: '#fff' }]}>Save progress & exit</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity onPress={discardAndExit} style={[s.exitBtn, { backgroundColor: t.glass, borderWidth: 1, borderColor: t.redBorder }]} activeOpacity={0.85}>
+              <Text style={[s.exitBtnTxt, { color: t.red }]}>{completedSets > 0 ? 'Discard workout' : 'Exit without saving'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setShowExit(false)} style={[s.exitBtn, { backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder }]} activeOpacity={0.85}>
+              <Text style={[s.exitBtnTxt, { color: t.textSec }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Completion modal */}
       <Modal visible={showComplete} transparent animationType="slide">
