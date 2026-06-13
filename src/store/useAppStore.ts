@@ -355,25 +355,27 @@ export function useAppStore() {
                 c.clientId === currentState.clientId
             );
             const progUpdates: Partial<AppState> = {};
+            const mapDays = (days: any[]) =>
+              days
+                .filter((d: any) => Array.isArray(d.exercises) && d.exercises.length > 0)
+                .map((d: any) => ({
+                  label: d.label || '',
+                  name: d.name || d.label || '',
+                  type: d.type || 'Strength',
+                  exercises: (d.exercises as any[]).map((ex: any) => ({
+                    name: ex.name || '',
+                    sets: String(ex.sets || '3'),
+                    reps: String(ex.reps || '10'),
+                    weight: String(ex.weight || 'BW'),
+                  })),
+                }));
             if (clientRecord) {
               if (clientRecord.program && clientRecord.program !== 'No program assigned') {
                 progUpdates.assignedProgram = clientRecord.program;
                 const days = ptData?.program_days?.[clientRecord.program] ??
                   ptData?.programs?.find((p: any) => p.name === clientRecord.program)?.days;
                 if (Array.isArray(days)) {
-                  progUpdates.programDays = (days as any[])
-                    .filter((d: any) => Array.isArray(d.exercises) && d.exercises.length > 0)
-                    .map((d: any) => ({
-                      label: d.label || '',
-                      name: d.name || d.label || '',
-                      type: d.type || 'Strength',
-                      exercises: (d.exercises as any[]).map((ex: any) => ({
-                        name: ex.name || '',
-                        sets: String(ex.sets || '3'),
-                        reps: String(ex.reps || '10'),
-                        weight: String(ex.weight || 'BW'),
-                      })),
-                    }));
+                  progUpdates.programDays = mapDays(days);
                 }
               }
               const m = clientRecord.macros;
@@ -384,6 +386,23 @@ export function useAppStore() {
                   carbs:    m.carbs?.tgt    || SEED.macroTargets.carbs,
                   fat:      m.fat?.tgt      || SEED.macroTargets.fat,
                 };
+              }
+            }
+            // Fallback: search programs.assignedClients directly using the client's
+            // Mongo auth ID. Handles divergence between coach_clients.program and
+            // programs.assignedClients (e.g. atomic PATCH assignment without coach
+            // portal sync, or clientRecord not found via email/clientId).
+            if (!progUpdates.programDays?.length && currentState.clientId) {
+              const fallbackProg = (ptData?.programs as any[] | undefined)?.find((p: any) =>
+                Array.isArray(p.assignedClients) &&
+                p.assignedClients.some((id: any) => String(id) === String(currentState.clientId))
+              );
+              if (fallbackProg) {
+                const fallbackDays = ptData?.program_days?.[fallbackProg.name] ?? fallbackProg.days;
+                if (Array.isArray(fallbackDays) && fallbackDays.length > 0) {
+                  progUpdates.assignedProgram = fallbackProg.name;
+                  progUpdates.programDays = mapDays(fallbackDays);
+                }
               }
             }
             if (Object.keys(progUpdates).length) {
