@@ -33,13 +33,13 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   sectionLabel:{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 8, marginTop: 18 },
   card:        { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 16, padding: 16 },
 
-  weightInput: { fontSize: 34, fontWeight: '900', color: t.text, fontFamily: 'Menlo', paddingVertical: 4 },
+  weightInput: { fontSize: 34, fontWeight: '900', color: t.text, fontFamily: t.mono, paddingVertical: 4 },
   weightUnit:  { fontSize: 14, color: t.textMuted, fontWeight: '700' },
 
   scoreRow:    { marginBottom: 14 },
   scoreHead:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   scoreLabel:  { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: t.textSec },
-  scoreVal:    { fontSize: 12, fontWeight: '800', color: t.red, fontFamily: 'Menlo' },
+  scoreVal:    { fontSize: 12, fontWeight: '800', color: t.red, fontFamily: t.mono },
   dotRow:      { flexDirection: 'row', gap: 5 },
   dot:         { flex: 1, height: 26, borderRadius: 7, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder },
   dotOn:       { backgroundColor: t.red, borderColor: t.red },

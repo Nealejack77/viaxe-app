@@ -39,7 +39,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   goalName:   { fontSize: 15, fontWeight: '800', color: t.text, letterSpacing: -0.2 },
   goalDesc:   { fontSize: 12, color: t.textMuted, marginTop: 2 },
 
-  bigInput:   { fontSize: 52, fontWeight: '900', color: t.text, fontFamily: 'Menlo', textAlign: 'center', paddingVertical: 12 },
+  bigInput:   { fontSize: 52, fontWeight: '900', color: t.text, fontFamily: t.mono, textAlign: 'center', paddingVertical: 12 },
   unit:       { fontSize: 14, fontWeight: '700', color: t.textMuted, textAlign: 'center', letterSpacing: 2 },
 
   whyInput:   { fontSize: 16, color: t.text, lineHeight: 24, minHeight: 120, textAlignVertical: 'top', padding: 18, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 16 },

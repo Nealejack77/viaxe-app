@@ -171,7 +171,7 @@ export default function ARIAScreen() {
             <View key={msg.id} style={[s.msgRow, msg.role === 'user' && { justifyContent: 'flex-end' }]}>
               {msg.role === 'aria' && (
                 <View style={s.ariaAvSmall}>
-                  <Text style={{ fontSize: 11, color: t.red }}>⚡</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '900', color: t.red, fontFamily: t.mono }}>//</Text>
                 </View>
               )}
               <View style={[s.bubble, msg.role === 'user' ? s.userBubble : s.ariaBubble]}>
@@ -183,7 +183,7 @@ export default function ARIAScreen() {
           {typing && (
             <View style={s.msgRow}>
               <View style={s.ariaAvSmall}>
-                <Text style={{ fontSize: 11, color: t.red }}>⚡</Text>
+                <Text style={{ fontSize: 11, fontWeight: '900', color: t.red, fontFamily: t.mono }}>//</Text>
               </View>
               <View style={s.ariaBubble}>
                 <Text style={{ fontSize: 13, color: t.textMuted, padding: 10 }}>ARIA is analysing...</Text>
