@@ -282,7 +282,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
               <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 10 }}>RECENT SESSIONS</Text>
               {store.sessions.slice(0, 5).map(sess => (
                 <View key={sess.id} style={[s.queueItem, { marginBottom: 8 }]}>
-                  <Text style={{ fontSize: 18 }}>🏋️</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: t.textMuted, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: t.text }}>{sess.workoutName}</Text>
                     <Text style={{ fontSize: 10, color: t.textMuted }}>{sess.date} · {sess.duration} min · {sess.setsCompleted} sets</Text>
@@ -763,7 +763,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
           <View style={s.modalOverlay}>
             <ScrollView style={{ width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
               <View style={s.completionCard}>
-                <Text style={{ fontSize: 48, marginBottom: 8 }}>🏆</Text>
+                <Text style={{ fontSize: 44, marginBottom: 8, fontWeight: '900', color: t.red, fontFamily: t.mono, letterSpacing: -2 }}>//</Text>
                 <Text style={s.completionTitle}>Workout{'\n'}Complete!</Text>
                 <Text style={s.completionSub}>
                   {formatTime(elapsed)} · {exercises.reduce((a, e) => a + e.sets.filter(s => s.completed).length, 0)} sets · {exercises.length} exercises

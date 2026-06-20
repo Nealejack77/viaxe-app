@@ -63,7 +63,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   card: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 12 },
   cardLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 4 },
   chartTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  bigVal: { fontSize: 32, fontWeight: '700', color: t.text, fontFamily: 'Menlo', lineHeight: 38 },
+  bigVal: { fontSize: 32, fontWeight: '700', color: t.text, fontFamily: t.mono, lineHeight: 38 },
   bigValSub: { fontSize: 14, color: t.textMuted },
   delta: { fontSize: 12, fontWeight: '700', marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, borderWidth: 1, alignSelf: 'flex-start' },
@@ -73,7 +73,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   statCard: { flex: 1, minWidth: '45%', backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 16, padding: 14 },
   statLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 6 },
-  statVal: { fontSize: 24, fontWeight: '700', color: t.text, fontFamily: 'Menlo', lineHeight: 28 },
+  statVal: { fontSize: 24, fontWeight: '700', color: t.text, fontFamily: t.mono, lineHeight: 28 },
   statUnit: { fontSize: 12, color: t.textMuted },
   statDelta: { fontSize: 10, fontWeight: '700', color: t.green, marginTop: 3 },
   achieveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,214,10,0.08)', borderColor: 'rgba(255,214,10,0.2)', borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 20 },
@@ -220,8 +220,8 @@ export default function ProgressScreen() {
               <Text style={s.cardLabel}>WEIGHT HISTORY</Text>
               {store.weightLog.slice().reverse().slice(0, 10).map((entry, i) => (
                 <View key={`${entry.date}-${i}`} style={s.bwEntry}>
-                  <Text style={{ fontSize: 13, color: t.textMuted, width: 90, fontFamily: 'Menlo' }}>{entry.date}</Text>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: t.text, flex: 1, fontFamily: 'Menlo' }}>{entry.weight.toFixed(1)} kg</Text>
+                  <Text style={{ fontSize: 13, color: t.textMuted, width: 90, fontFamily: t.mono }}>{entry.date}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: t.text, flex: 1, fontFamily: t.mono }}>{entry.weight.toFixed(1)} kg</Text>
                   {entry.notes ? <Text style={{ fontSize: 10, color: t.textMuted }}>{entry.notes}</Text> : null}
                 </View>
               ))}
@@ -247,14 +247,14 @@ export default function ProgressScreen() {
             </View>
             <View style={s.statCard}>
               <Text style={s.statLabel}>STREAK</Text>
-              <Text style={[s.statVal, { color: t.gold }]}>{store.streak}<Text style={[s.statUnit, { color: t.gold }]}> 🔥</Text></Text>
+              <Text style={[s.statVal, { color: t.gold }]}>{store.streak}<Text style={[s.statUnit, { color: t.gold }]}> d</Text></Text>
               <Text style={s.statDelta}>Days consecutive</Text>
             </View>
           </View>
 
           {/* Achievement */}
           <View style={s.achieveCard}>
-            <Text style={{ fontSize: 30 }}>🏆</Text>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: t.gold, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
             <View style={{ flex: 1 }}>
               <Text style={s.achieveLabel}>MILESTONE</Text>
               <Text style={s.achieveName}>
