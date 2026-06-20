@@ -146,15 +146,15 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   startBtnTxt: { fontSize: 12, fontWeight: '800', color: t.red, letterSpacing: 1 },
   trainHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 12 },
   trainTitle: { fontSize: 11, fontWeight: '800', color: t.text, letterSpacing: 0.5 },
-  timerTxt: { fontSize: 22, fontWeight: '700', fontFamily: 'Menlo', marginTop: 2, color: t.red },
+  timerTxt: { fontSize: 22, fontWeight: '700', fontFamily: t.mono, marginTop: 2, color: t.red },
   liveBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginHorizontal: 20, backgroundColor: t.redDim, borderColor: t.redBorder, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8 },
   lmItem: { alignItems: 'center' },
-  lmVal: { fontSize: 18, fontWeight: '700', color: t.text, fontFamily: 'Menlo' },
+  lmVal: { fontSize: 18, fontWeight: '700', color: t.text, fontFamily: t.mono },
   lmLabel: { fontSize: 8, letterSpacing: 1.5, color: t.red, fontWeight: '700', marginTop: 1 },
   lmDiv: { width: 1, height: 30, backgroundColor: t.border },
   restOverlay: { position: 'absolute', inset: 0, backgroundColor: t.scheme === 'dark' ? 'rgba(8,8,8,0.96)' : 'rgba(247,247,248,0.97)', zIndex: 50, alignItems: 'center', justifyContent: 'center' },
   restLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 4, color: t.textMuted, marginBottom: 8 },
-  restCount: { fontSize: 80, fontWeight: '900', color: t.text, fontFamily: 'Menlo', letterSpacing: -3 },
+  restCount: { fontSize: 80, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -3 },
   restSkip: { marginTop: 32, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: t.glass, borderRadius: 12, borderWidth: 1, borderColor: t.glassBorder },
   restSkipTxt: { fontSize: 13, fontWeight: '700', color: t.textSec, letterSpacing: 1 },
   exCard: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 20, padding: 18, marginBottom: 14 },
@@ -162,7 +162,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   exName: { fontSize: 24, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
   exPlanned: { fontSize: 11, color: t.textMuted, marginBottom: 14 },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, backgroundColor: t.elevated, borderRadius: 12, padding: 10 },
-  setNum: { fontSize: 12, fontWeight: '700', color: t.textMuted, width: 20, fontFamily: 'Menlo' },
+  setNum: { fontSize: 12, fontWeight: '700', color: t.textMuted, width: 20, fontFamily: t.mono },
   setNumActive: { color: t.red },
   setNumDone: { color: t.green },
   setInput: { flex: 1, backgroundColor: t.inputBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 15, color: t.text, borderWidth: 1, borderColor: t.border, textAlign: 'center' },
@@ -178,9 +178,9 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   addExBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.glass, marginBottom: 8 },
   addExTxt: { fontSize: 13, fontWeight: '700', color: t.textSec },
   queueItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.glass, borderRadius: 12, padding: 12, marginBottom: 6 },
-  queueNum: { fontSize: 10, color: t.textMuted, width: 18, fontFamily: 'Menlo' },
+  queueNum: { fontSize: 10, color: t.textMuted, width: 18, fontFamily: t.mono },
   queueName: { flex: 1, fontSize: 13, fontWeight: '600', color: t.textSec },
-  queueMeta: { fontSize: 10, color: t.textMuted, fontFamily: 'Menlo' },
+  queueMeta: { fontSize: 10, color: t.textMuted, fontFamily: t.mono },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, width: '100%', maxHeight: '90%' },
   modalTitle: { fontSize: 20, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
@@ -207,7 +207,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   chip: { minWidth: 40, height: 40, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: t.glassBorder, backgroundColor: t.glass, alignItems: 'center', justifyContent: 'center' },
   chipActive: { borderColor: t.red, backgroundColor: t.redDim },
   chipDone: { borderColor: 'rgba(52,199,89,0.35)', backgroundColor: 'rgba(52,199,89,0.10)' },
-  chipTxt: { fontSize: 13, fontWeight: '800', color: t.textMuted, fontFamily: 'Menlo' },
+  chipTxt: { fontSize: 13, fontWeight: '800', color: t.textMuted, fontFamily: t.mono },
   chipTxtActive: { color: t.red },
   chipTxtDone: { color: t.green },
   // Exit confirmation modal
@@ -246,7 +246,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
                 <LinearGradient colors={['#E8432D', '#c73520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <View style={s.workoutCardInner}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                      <Text style={{ fontSize: 24 }}>{w.emoji}</Text>
+                      <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
                         <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: 'rgba(255,255,255,0.9)' }}>{w.tag}</Text>
                       </View>
@@ -261,7 +261,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
               ) : (
                 <View style={[s.workoutCardInner, { backgroundColor: t.glass }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <Text style={{ fontSize: 24 }}>{w.emoji}</Text>
+                    <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
                     <View style={s.workoutTagBg}>
                       <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted }}>{w.tag}</Text>
                     </View>

@@ -15,15 +15,15 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.bg },
   scroll: { padding: 20, paddingBottom: 32 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  logo: { fontSize: 16, fontWeight: '700', color: t.text, letterSpacing: -0.5, fontFamily: 'Menlo' },
+  logo: { fontSize: 16, fontWeight: '700', color: t.text, letterSpacing: -0.5, fontFamily: t.mono },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: t.red, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 15, fontWeight: '800', color: '#fff' },
   greetLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 2 },
   greetName: { fontSize: 28, fontWeight: '900', color: t.text, letterSpacing: -0.5 },
   card: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 12 },
   cardLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted },
-  bigNum: { fontSize: 40, fontWeight: '900', color: t.text, lineHeight: 44, fontFamily: 'Menlo' },
-  bigNumSub: { fontSize: 16, color: t.textMuted, fontFamily: 'Menlo' },
+  bigNum: { fontSize: 40, fontWeight: '900', color: t.text, lineHeight: 44, fontFamily: t.mono },
+  bigNumSub: { fontSize: 16, color: t.textMuted, fontFamily: t.mono },
   sessCard: { borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   sessIcon: { width: 42, height: 42, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   sessTag: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: 'rgba(255,255,255,0.65)', marginBottom: 2 },
@@ -32,9 +32,9 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   sessPlay: { width: 36, height: 36, backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   statCard: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 14, padding: 12, alignItems: 'center' },
-  statVal: { fontSize: 20, fontWeight: '700', color: t.text, fontFamily: 'Menlo' },
+  statVal: { fontSize: 20, fontWeight: '700', color: t.text, fontFamily: t.mono },
   statLabel: { fontSize: 8, color: t.textMuted, letterSpacing: 1, marginTop: 3 },
-  ariaCard: { backgroundColor: t.redDim, borderColor: t.redBorder, borderWidth: 1, borderRadius: 16, padding: 14 },
+  ariaCard: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 16, padding: 14 },
   ariaTagWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   ariaDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: t.red },
   ariaTag: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.red },
@@ -55,12 +55,12 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   // Journey card
   journeyTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   journeyGoal: { fontSize: 18, fontWeight: '900', color: t.text, letterSpacing: -0.4, marginTop: 3 },
-  journeyPct: { fontSize: 26, fontWeight: '900', color: t.red, fontFamily: 'Menlo' },
+  journeyPct: { fontSize: 26, fontWeight: '900', color: t.red, fontFamily: t.mono },
   journeyPctLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted, textAlign: 'right' },
   journeyBarTrack: { height: 8, borderRadius: 4, backgroundColor: t.border, overflow: 'hidden', marginBottom: 8 },
   journeyBarFill: { height: 8, borderRadius: 4, backgroundColor: t.red },
   journeyEnds: { flexDirection: 'row', justifyContent: 'space-between' },
-  journeyEnd: { fontSize: 10, color: t.textMuted, fontFamily: 'Menlo' },
+  journeyEnd: { fontSize: 10, color: t.textMuted, fontFamily: t.mono },
   journeyWhy: { fontSize: 12, color: t.textSec, fontStyle: 'italic', lineHeight: 18, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: t.border },
   journeyMilestone: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   journeyMilestoneTxt: { fontSize: 11.5, color: t.textSec, flex: 1 },
@@ -183,7 +183,7 @@ export default function HomeScreen() {
             {/* Greeting */}
             <View style={{ marginBottom: 16 }}>
               <Text style={s.greetLabel}>{greeting}</Text>
-              <Text style={s.greetName}>{store.userName} {store.streak > 7 ? '🔥' : '👋'}</Text>
+              <Text style={s.greetName}>{store.userName}</Text>
             </View>
 
             {/* Journey card — goal, progress, next milestone, your why */}
@@ -252,7 +252,7 @@ export default function HomeScreen() {
                 style={s.sessCard}
               >
                 <View style={s.sessIcon}>
-                  <Text style={{ fontSize: 22 }}>{workout.emoji}</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: '#fff', fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.sessTag}>TODAY'S MISSION</Text>
@@ -269,7 +269,7 @@ export default function HomeScreen() {
             <View style={s.statsRow}>
               <View style={[s.statCard, { flex: 1 }]}>
                 <Text style={[s.statVal, { color: t.gold }]}>{store.streak}</Text>
-                <Text style={s.statLabel}>🔥 STREAK</Text>
+                <Text style={s.statLabel}>DAY STREAK</Text>
               </View>
               <View style={[s.statCard, { flex: 1 }]}>
                 <Text style={s.statVal}>{kgRemaining !== null ? kgRemaining.toFixed(1) : '—'}</Text>
