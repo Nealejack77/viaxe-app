@@ -186,6 +186,30 @@ export default function HomeScreen() {
               <Text style={s.greetName}>{store.userName}</Text>
             </View>
 
+            {/* Cockpit — today's session is the primary next action (the one ember surface) */}
+            <TouchableOpacity onPress={() => nav.navigate('Train')} activeOpacity={0.85}>
+              <LinearGradient
+                colors={['#E8432D', '#c73520']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={s.sessCard}
+              >
+                <View style={s.sessIcon}>
+                  <Text style={{ fontSize: 20, fontWeight: '900', color: '#fff', fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.sessTag}>TODAY'S MISSION</Text>
+                  <Text style={s.sessName}>{todayWorkoutName}</Text>
+                  <Text style={s.sessMeta}>{todayWorkoutExCount} exercises · {workout.duration} min · {workout.tag}</Text>
+                </View>
+                <View style={s.sessPlay}>
+                  <PlayIcon size={16} color="#fff" />
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* TRAJECTORY */}
+            <Text style={[s.cardLabel, { marginBottom: 10, marginTop: 4 }]}>TRAJECTORY</Text>
+
             {/* Journey card — goal, progress, next milestone, your why */}
             <View style={s.card}>
               <View style={s.journeyTop}>
@@ -244,27 +268,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
 
-            {/* Today's session */}
-            <TouchableOpacity onPress={() => nav.navigate('Train')} activeOpacity={0.85}>
-              <LinearGradient
-                colors={['#E8432D', '#c73520']}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={s.sessCard}
-              >
-                <View style={s.sessIcon}>
-                  <Text style={{ fontSize: 20, fontWeight: '900', color: '#fff', fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.sessTag}>TODAY'S MISSION</Text>
-                  <Text style={s.sessName}>{todayWorkoutName}</Text>
-                  <Text style={s.sessMeta}>{todayWorkoutExCount} exercises · {workout.duration} min · {workout.tag}</Text>
-                </View>
-                <View style={s.sessPlay}>
-                  <PlayIcon size={16} color="#fff" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-
             {/* Stats row */}
             <View style={s.statsRow}>
               <View style={[s.statCard, { flex: 1 }]}>
@@ -281,6 +284,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
+            <Text style={[s.cardLabel, { marginBottom: 10, marginTop: 8 }]}>SIGNAL</Text>
             {/* ARIA insight */}
             <View style={s.ariaCard}>
               <View style={s.ariaTagWrap}>

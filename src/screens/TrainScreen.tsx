@@ -161,7 +161,9 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   exLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.red, marginBottom: 4 },
   exName: { fontSize: 24, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
   exPlanned: { fontSize: 11, color: t.textMuted, marginBottom: 14 },
-  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10, backgroundColor: t.elevated, borderRadius: 12, padding: 10 },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: t.elevated, borderRadius: 10, padding: 10, borderLeftWidth: 2, borderLeftColor: 'transparent' },
+  setRowActive: { borderLeftColor: t.red, backgroundColor: t.redDim },
+  setRowDone: { opacity: 0.5 },
   setNum: { fontSize: 12, fontWeight: '700', color: t.textMuted, width: 20, fontFamily: t.mono },
   setNumActive: { color: t.red },
   setNumDone: { color: t.green },
@@ -626,7 +628,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
               const isActive = setIdx === activeSetIdx;
               const isDone   = set.completed;
               return (
-                <View key={setIdx} style={s.setRow}>
+                <View key={setIdx} style={[s.setRow, isDone && s.setRowDone, isActive && s.setRowActive]}>
                   <Text style={[s.setNum, isDone && s.setNumDone, isActive && s.setNumActive]}>
                     {isDone ? '✓' : isActive ? '▶' : String(setIdx + 1)}
                   </Text>
