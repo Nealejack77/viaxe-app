@@ -8,17 +8,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore } from '../store/useAppStore';
 import { requestNotificationPermission, scheduleDailyWorkoutReminder } from '../lib/notifications';
-import { ZapIcon, BellIcon, UserIcon, ClipboardIcon, FlameIcon } from '../components/Icons';
+import { ZapIcon, BellIcon, UserIcon, ClipboardIcon, FlameIcon, ActivityIcon, AwardIcon } from '../components/Icons';
 
 interface Props {
   onDone: () => void;
 }
 
 const GOALS = [
-  { id: 'Fat loss',        emoji: '⚡', desc: 'Drop body fat, keep muscle' },
-  { id: 'Muscle gain',     emoji: '💪', desc: 'Build size and shape' },
-  { id: 'Strength',        emoji: '🏋️', desc: 'Lift heavier, get stronger' },
-  { id: 'Health & energy', emoji: '❤️', desc: 'Feel better every day' },
+  { id: 'Fat loss',        Icon: FlameIcon,    desc: 'Drop body fat, keep muscle' },
+  { id: 'Muscle gain',     Icon: ActivityIcon, desc: 'Build size and shape' },
+  { id: 'Strength',        Icon: AwardIcon,    desc: 'Lift heavier, get stronger' },
+  { id: 'Health & energy', Icon: ZapIcon,      desc: 'Feel better every day' },
 ];
 
 const makeStyles = (t: Tokens) => StyleSheet.create({
@@ -35,7 +35,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
 
   goalCard:   { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, backgroundColor: t.glass, borderWidth: 1.5, borderColor: t.glassBorder, marginBottom: 10 },
   goalCardOn: { borderColor: t.red, backgroundColor: t.redDim },
-  goalEmoji:  { fontSize: 26 },
+  goalEmoji:  { width: 30, alignItems: 'center', justifyContent: 'center' },
   goalName:   { fontSize: 15, fontWeight: '800', color: t.text, letterSpacing: -0.2 },
   goalDesc:   { fontSize: 12, color: t.textMuted, marginTop: 2 },
 
@@ -130,15 +130,18 @@ export default function OnboardingScreen({ onDone }: Props) {
       title: 'What are you here to do?',
       body: (
         <View>
-          {GOALS.map(g => (
+          {GOALS.map(g => {
+            const Icon = g.Icon;
+            return (
             <TouchableOpacity key={g.id} style={[s.goalCard, goal === g.id && s.goalCardOn]} onPress={() => setGoal(g.id)} activeOpacity={0.8}>
-              <Text style={s.goalEmoji}>{g.emoji}</Text>
+              <View style={s.goalEmoji}><Icon size={22} color={goal === g.id ? t.red : t.textSec} strokeWidth={2} /></View>
               <View>
                 <Text style={s.goalName}>{g.id}</Text>
                 <Text style={s.goalDesc}>{g.desc}</Text>
               </View>
             </TouchableOpacity>
-          ))}
+            );
+          })}
         </View>
       ),
       cta: <Cta label="CONTINUE" onPress={next} disabled={!goal} />,

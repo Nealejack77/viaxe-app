@@ -66,7 +66,6 @@ interface FoodDraft {
 
 const MEALS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
 const MEAL_LABELS: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
-const MEAL_ICONS: Record<Meal, string>  = { breakfast: '☀️', lunch: '🌤', dinner: '🌙', snacks: '⚡️' };
 
 const BASE = 'https://www.viaxe.co.uk/api';
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -201,7 +200,7 @@ function ConfirmView({ draft, grams, onGramsChange, meal, onMealChange, macros, 
           {MEALS.map(m => (
             <TouchableOpacity key={m} style={[s.mealChip, meal === m && s.mealChipActive]} onPress={() => onMealChange(m)}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: meal === m ? '#fff' : t.textSec }}>
-                {MEAL_ICONS[m]} {MEAL_LABELS[m]}
+                {MEAL_LABELS[m]}
               </Text>
             </TouchableOpacity>
           ))}
@@ -565,7 +564,7 @@ export default function NutritionScreen() {
           return (
             <View key={meal} style={s.mealSection}>
               <View style={s.mealHdr}>
-                <Text style={s.mealTitle}>{MEAL_ICONS[meal]} {MEAL_LABELS[meal]}</Text>
+                <Text style={s.mealTitle}>{MEAL_LABELS[meal]}</Text>
                 {mealCal > 0 && <Text style={s.mealCal}>{mealCal} kcal</Text>}
                 <TouchableOpacity style={s.addBtn} onPress={() => openModal(meal)}>
                   <PlusIcon size={14} color={t.red} strokeWidth={2.5} />
