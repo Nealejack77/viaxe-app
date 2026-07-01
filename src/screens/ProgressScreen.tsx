@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore, WeightEntry } from '../store/useAppStore';
 import { PlusIcon, ActivityIcon, CameraIcon } from '../components/Icons';
+import ActivityCalendar from '../components/ActivityCalendar';
 
 const CHART_W = 280;
 const CHART_H = 80;
@@ -366,6 +367,10 @@ export default function ProgressScreen() {
           {store.workoutsLoaded && !hasSessions && (
             <Text style={s.emptyTxt}>No workouts logged yet. Start your first session in the Train tab.</Text>
           )}
+
+          {/* Activity calendar */}
+          <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginTop: 24, marginBottom: 12 }}>ACTIVITY CALENDAR</Text>
+          <ActivityCalendar />
 
         </ScrollView>
       </SafeAreaView>

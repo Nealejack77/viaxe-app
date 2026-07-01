@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { PlusIcon, XIcon } from '../components/Icons';
+import WaterCard from '../components/WaterCard';
 import { useAppStore } from '../store/useAppStore';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -558,6 +559,8 @@ export default function NutritionScreen() {
             <MacroBar label="FAT"     val={totals.fat}     target={TARGETS.fat}     color={t.gold}   t={t} />
           </View>
         </View>
+
+        <WaterCard />
 
         {MEALS.map(meal => {
           const mealLogs = todayLogs.filter(l => l.meal === meal);

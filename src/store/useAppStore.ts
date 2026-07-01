@@ -164,6 +164,9 @@ interface AppState {
   // loading states
   workoutsLoaded: boolean;
   bodyweightLoaded: boolean;
+  // Water tracker (local-first: date 'YYYY-MM-DD' -> ml)
+  waterLog: Record<string, number>;
+  waterGoalMl: number;
 }
 
 const SEED: AppState = {
@@ -191,6 +194,8 @@ const SEED: AppState = {
   checkInsLoaded: false,
   workoutsLoaded: false,
   bodyweightLoaded: false,
+  waterLog: {},
+  waterGoalMl: 2500,
 };
 
 // Demo seed — used only in demo mode, no real auth
@@ -232,6 +237,8 @@ const DEMO_SEED: AppState = {
   checkInsLoaded: true,
   workoutsLoaded: true,
   bodyweightLoaded: true,
+  waterLog: { [new Date().toISOString().split('T')[0]]: 1500 },
+  waterGoalMl: 2500,
   programDays: [
     { label: 'Monday', name: 'Lower Body A', type: 'Strength', exercises: [
       { name: 'Back Squat', sets: '4', reps: '6–8', weight: '100kg' },
@@ -560,6 +567,20 @@ export function useAppStore() {
     } catch {}
   }, [state]);
 
+  // ── Water tracker (local-first) ─────────────────────────────────────────────
+  const logWater = useCallback((ml: number) => {
+    const d = today();
+    const cur = state.waterLog[d] || 0;
+    const nextMl = Math.max(0, Math.min(20000, cur + ml)); // clamp: no negative / absurd
+    persist({ ...state, waterLog: { ...state.waterLog, [d]: nextMl } });
+  }, [state, persist]);
+
+  const setWaterGoal = useCallback((ml: number) => {
+    const g = Math.round(ml);
+    if (isNaN(g)) return;
+    persist({ ...state, waterGoalMl: Math.max(500, Math.min(6000, g)) });
+  }, [state, persist]);
+
   const saveWorkoutToDB = useCallback(async (
     workoutId: string,
     workoutName: string,
@@ -797,6 +818,8 @@ export function useAppStore() {
     markNotificationsRead,
     loadCheckIns,
     submitCheckIn,
+    logWater,
+    setWaterGoal,
     totalSessions: state.sessions.length,
   };
 }
