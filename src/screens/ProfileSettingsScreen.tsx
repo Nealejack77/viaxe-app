@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Switch,
+  TextInput, Alert, ActivityIndicator, Switch, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleDailyWorkoutReminder, cancelDailyWorkoutReminder } from '../lib/notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -11,6 +12,8 @@ import { useAppStore, UserProfile } from '../store/useAppStore';
 import { XIcon } from '../components/Icons';
 import { RootStackParamList } from '../../App';
 import { confirm } from '../utils/confirm';
+
+const API_BASE = 'https://www.viaxe.co.uk/api';
 
 type Props = StackScreenProps<RootStackParamList, 'Profile'> & { onLogout: () => void };
 
@@ -47,6 +50,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   inputLabel:   { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: t.textMuted, width: 100 },
   textInput:    { flex: 1, fontSize: 15, color: t.text, paddingVertical: 2 },
   textArea:     { flex: 1, fontSize: 14, color: t.text, paddingVertical: 4, minHeight: 60, textAlignVertical: 'top' },
+  input:        { backgroundColor: t.inputBg, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: t.text },
 
   // Theme toggle
   themePicker:  { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 12, gap: 8 },
@@ -151,6 +155,71 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
     if (ok) onLogout();
   };
 
+  // ── Change password (real, in-app) ─────────────────────────────────────────
+  const [pwModal, setPwModal] = useState(false);
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [newPw2, setNewPw2] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwErr, setPwErr] = useState('');
+  const [pwOk, setPwOk] = useState(false);
+
+  const isDemo = store.userName === 'Jack' && !store.clientId; // demo has no real session
+
+  const openPwModal = () => {
+    setCurPw(''); setNewPw(''); setNewPw2(''); setPwErr(''); setPwOk(false); setPwModal(true);
+  };
+
+  const submitPassword = async () => {
+    setPwErr('');
+    if (!curPw || !newPw) { setPwErr('Fill in every field.'); return; }
+    if (newPw.length < 8) { setPwErr('New password must be at least 8 characters.'); return; }
+    if (newPw !== newPw2) { setPwErr('New passwords do not match.'); return; }
+    setPwBusy(true);
+    try {
+      const token = await AsyncStorage.getItem('@viaxe_token');
+      const r = await fetch(`${API_BASE}/auth?action=client-change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: curPw, newPassword: newPw }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setPwErr(d.error || 'Could not change password.'); setPwBusy(false); return; }
+      setPwOk(true);
+      setTimeout(() => setPwModal(false), 1200);
+    } catch (e: any) {
+      setPwErr('Network error. Please try again.');
+    }
+    setPwBusy(false);
+  };
+
+  // ── Delete account (Apple 5.1.1(v)) ─────────────────────────────────────────
+  const handleDeleteAccount = async () => {
+    if (isDemo) { await confirm('Demo account', 'Account deletion is not available in demo mode.', 'OK', 'OK', false); return; }
+    const ok = await confirm(
+      'Delete account',
+      'This permanently deletes your account and all your data — workouts, progress, photos and messages. This cannot be undone.',
+      'Delete account', 'Cancel', true,
+    );
+    if (!ok) return;
+    try {
+      const token = await AsyncStorage.getItem('@viaxe_token');
+      const r = await fetch(`${API_BASE}/auth?action=delete-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        await confirm('Could not delete', d.error || 'Something went wrong. Please try again.', 'OK', 'OK', false);
+        return;
+      }
+      // Account is gone server-side — clear local state and return to login.
+      onLogout();
+    } catch (e) {
+      await confirm('Could not delete', 'Network error. Please check your connection and try again.', 'OK', 'OK', false);
+    }
+  };
+
   const [prefs, setPrefs] = useState<Record<string, boolean>>(store.profile.notificationPrefs || {});
 
   const togglePref = useCallback((key: string, value: boolean) => {
@@ -247,11 +316,12 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
         <View style={s.section}>
           <SectionLabel label="ACCOUNT" s={s} />
           <View style={s.card}>
-            <TouchableOpacity
-              style={s.row}
-              onPress={() => Alert.alert('Change Password', 'A password reset link will be sent to your email.')}
-            >
+            <TouchableOpacity style={s.row} onPress={openPwModal}>
               <Text style={s.rowLabel}>Change Password</Text>
+              <Text style={s.rowChevron}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.row, s.rowLast]} onPress={handleDeleteAccount}>
+              <Text style={[s.rowLabel, { color: t.red }]}>Delete Account</Text>
               <Text style={s.rowChevron}>›</Text>
             </TouchableOpacity>
           </View>
@@ -303,6 +373,29 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Change password modal */}
+      <Modal visible={pwModal} transparent animationType="fade" onRequestClose={() => setPwModal(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 24 }}>
+            <View style={{ backgroundColor: t.surface, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: t.border }}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: t.text, marginBottom: 4 }}>Change password</Text>
+              <Text style={{ fontSize: 12.5, color: t.textSec, marginBottom: 16 }}>Enter your current password and a new one (min 8 characters).</Text>
+              <TextInput style={s.input} placeholder="Current password" placeholderTextColor={t.textMuted} secureTextEntry value={curPw} onChangeText={setCurPw} autoCapitalize="none" />
+              <TextInput style={[s.input, { marginTop: 10 }]} placeholder="New password" placeholderTextColor={t.textMuted} secureTextEntry value={newPw} onChangeText={setNewPw} autoCapitalize="none" />
+              <TextInput style={[s.input, { marginTop: 10 }]} placeholder="Confirm new password" placeholderTextColor={t.textMuted} secureTextEntry value={newPw2} onChangeText={setNewPw2} autoCapitalize="none" />
+              {!!pwErr && <Text style={{ color: t.red, fontSize: 12.5, marginTop: 10 }}>{pwErr}</Text>}
+              {pwOk && <Text style={{ color: t.green, fontSize: 12.5, marginTop: 10 }}>Password updated.</Text>}
+              <TouchableOpacity style={[s.saveBtn, { marginHorizontal: 0, marginTop: 16, opacity: pwBusy ? 0.6 : 1 }]} onPress={submitPassword} disabled={pwBusy}>
+                {pwBusy ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnTxt}>UPDATE PASSWORD</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={{ alignItems: 'center', paddingVertical: 12 }} onPress={() => setPwModal(false)} disabled={pwBusy}>
+                <Text style={{ color: t.textSec, fontSize: 13 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }

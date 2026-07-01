@@ -44,6 +44,25 @@ export default function LoginScreen({ onLogin }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
+
+  const handleForgot = async () => {
+    const email = username.trim().toLowerCase();
+    setResetMsg('');
+    if (!email.includes('@')) {
+      setError('Enter your account email in the field above, then tap Forgot password.');
+      return;
+    }
+    setError('');
+    try {
+      await fetch('https://www.viaxe.co.uk/api/auth?action=request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch { /* still show the neutral message — never reveal existence */ }
+    setResetMsg('If an account exists for that email, a reset link is on its way. Check your inbox.');
+  };
 
   const submit = async () => {
     if (!username.trim() || !password.trim()) {
@@ -136,11 +155,18 @@ export default function LoginScreen({ onLogin }: Props) {
               ? <ActivityIndicator color="#fff" />
               : <Text style={s.loginTxt}>LOG IN</Text>}
           </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleForgot} style={{ alignItems: 'center', paddingTop: 14 }}>
+            <Text style={{ fontSize: 12, color: t.textSec, fontWeight: '600' }}>Forgot password?</Text>
+          </TouchableOpacity>
+          {!!resetMsg && <Text style={[s.hint, { marginTop: 8 }]}>{resetMsg}</Text>}
         </View>
 
+        {__DEV__ && (
         <TouchableOpacity onPress={demoLogin} style={s.demoBtn}>
           <Text style={s.demoTxt}>Continue with demo account →</Text>
         </TouchableOpacity>
+        )}
 
         <Text style={s.hint}>
           Don't have an account? Ask your coach to send you an invite link.
