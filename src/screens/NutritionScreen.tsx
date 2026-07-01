@@ -503,11 +503,12 @@ export default function NutritionScreen() {
       name: mf.name, brand: mf.brand,
       caloriesPer100g: 0, proteinPer100g: 0, carbsPer100g: 0, fatPer100g: 0,
       servingUnit: mf.unit || 'g', isManual: true,
-      defaultGrams: parseFloat(mf.grams) || 100,
-      manualCalories: parseFloat(mf.calories) || 0,
-      manualProtein:  parseFloat(mf.protein)  || 0,
-      manualCarbs:    parseFloat(mf.carbs)    || 0,
-      manualFat:      parseFloat(mf.fat)      || 0,
+      // Clamp to non-negative — a negative macro/gram would corrupt daily totals.
+      defaultGrams: Math.max(1, parseFloat(mf.grams) || 100),
+      manualCalories: Math.max(0, parseFloat(mf.calories) || 0),
+      manualProtein:  Math.max(0, parseFloat(mf.protein)  || 0),
+      manualCarbs:    Math.max(0, parseFloat(mf.carbs)    || 0),
+      manualFat:      Math.max(0, parseFloat(mf.fat)      || 0),
     };
     logFood(d, d.defaultGrams, addMeal ?? 'breakfast');
   };
