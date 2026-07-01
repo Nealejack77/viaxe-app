@@ -360,7 +360,7 @@ function AddExerciseModal({ visible, onClose, onAdd }: {
           <View style={[s.modalCard, { paddingBottom: 40 }]}>
             <Text style={s.modalTitle}>Add Exercise</Text>
             <Text style={s.modalSub}>{selected ? `Selected: ${selected}` : 'Search and select an exercise'}</Text>
-            <TouchableOpacity style={s.modalClose} onPress={onClose}>
+            <TouchableOpacity style={s.modalClose} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
               <XIcon size={20} color={t.textSec} />
             </TouchableOpacity>
 
@@ -670,6 +670,8 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
                     onPress={() => logSet(setIdx)}
                     style={[s.logSetBtn, isDone && s.logSetBtnDone]}
                     disabled={isDone}
+                    accessibilityRole="button"
+                    accessibilityLabel={isDone ? `Set ${setIdx + 1} logged` : `Log set ${setIdx + 1}`}
                   >
                     {isDone
                       ? <CheckIcon size={16} color={t.green} strokeWidth={2.5} />

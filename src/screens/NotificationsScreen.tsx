@@ -96,7 +96,7 @@ export default function NotificationsScreen({ navigation }: Props) {
           <Text style={[s.markAll, store.unreadNotifications === 0 && { opacity: 0.3 }]}>Mark all read</Text>
         </TouchableOpacity>
         <Text style={s.headerTitle}>Notifications</Text>
-        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Close">
           <XIcon size={14} color={t.text} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>

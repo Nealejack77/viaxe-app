@@ -152,7 +152,7 @@ export default function CheckInScreen({ navigation }: Props) {
       <View style={s.header}>
         <View style={{ width: 32 }} />
         <Text style={s.headerTitle}>Weekly Check-in</Text>
-        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Close">
           <XIcon size={14} color={t.text} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>

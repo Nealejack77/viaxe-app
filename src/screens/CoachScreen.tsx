@@ -212,6 +212,8 @@ export default function CoachScreen() {
             onPress={sendMessage}
             style={[s.sendBtn, (!input.trim() || sending) && { opacity: 0.4 }]}
             disabled={!input.trim() || sending}
+            accessibilityRole="button"
+            accessibilityLabel="Send message"
           >
             {sending
               ? <ActivityIndicator color="#fff" size="small" />

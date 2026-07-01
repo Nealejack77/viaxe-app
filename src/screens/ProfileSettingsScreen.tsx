@@ -239,7 +239,7 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
       <View style={s.header}>
         <View style={{ width: 32 }} />
         <Text style={s.headerTitle}>Profile & Settings</Text>
-        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Close settings">
           <XIcon size={14} color={t.text} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>

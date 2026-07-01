@@ -64,9 +64,9 @@ export default function ActivityCalendar() {
   return (
     <View style={s.card}>
       <View style={s.hdr}>
-        <TouchableOpacity style={s.nav} onPress={() => shift(-1)}><Text style={s.navTxt}>‹</Text></TouchableOpacity>
-        <Text style={s.month}>{MONTHS[view.m]} {view.y}</Text>
-        <TouchableOpacity style={s.nav} onPress={() => shift(1)}><Text style={s.navTxt}>›</Text></TouchableOpacity>
+        <TouchableOpacity style={s.nav} onPress={() => shift(-1)} accessibilityRole="button" accessibilityLabel="Previous month"><Text style={s.navTxt}>‹</Text></TouchableOpacity>
+        <Text style={s.month} accessibilityRole="header">{MONTHS[view.m]} {view.y}</Text>
+        <TouchableOpacity style={s.nav} onPress={() => shift(1)} accessibilityRole="button" accessibilityLabel="Next month"><Text style={s.navTxt}>›</Text></TouchableOpacity>
       </View>
 
       <View style={s.weekRow}>

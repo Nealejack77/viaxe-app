@@ -164,7 +164,7 @@ export default function HomeScreen() {
             <View style={s.header}>
               <Text style={s.logo}>//VIAXE</Text>
               <View style={s.headerBtns}>
-                <TouchableOpacity style={s.bellBtn} onPress={() => nav.navigate('Notifications')} activeOpacity={0.8}>
+                <TouchableOpacity style={s.bellBtn} onPress={() => nav.navigate('Notifications')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel={store.unreadNotifications > 0 ? `Notifications, ${store.unreadNotifications} unread` : 'Notifications'}>
                   <BellIcon size={17} color={t.text} strokeWidth={2} />
                   {store.unreadNotifications > 0 && (
                     <View style={s.bellBadge}>
@@ -172,7 +172,7 @@ export default function HomeScreen() {
                     </View>
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => nav.navigate('Profile')} activeOpacity={0.8}>
+                <TouchableOpacity onPress={() => nav.navigate('Profile')} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Profile and settings">
                   <View style={s.avatar}>
                     <Text style={s.avatarText}>{store.userName.charAt(0)}</Text>
                   </View>

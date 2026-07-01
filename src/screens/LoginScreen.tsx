@@ -142,7 +142,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 returnKeyType="done"
                 onSubmitEditing={submit}
               />
-              <TouchableOpacity onPress={() => setShowPw(p => !p)} style={s.eyeBtn}>
+              <TouchableOpacity onPress={() => setShowPw(p => !p)} style={s.eyeBtn} accessibilityRole="button" accessibilityLabel={showPw ? 'Hide password' : 'Show password'}>
                 <Text style={{ fontSize: 16 }}>{showPw ? '🙈' : '👁'}</Text>
               </TouchableOpacity>
             </View>

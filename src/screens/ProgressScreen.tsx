@@ -209,7 +209,7 @@ export default function ProgressScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleLogWeight}
               />
-              <TouchableOpacity onPress={handleLogWeight} style={s.logWeightBtn}>
+              <TouchableOpacity onPress={handleLogWeight} style={s.logWeightBtn} accessibilityRole="button" accessibilityLabel="Log today's weight">
                 <PlusIcon size={18} color="#fff" strokeWidth={2.5} />
               </TouchableOpacity>
             </View>

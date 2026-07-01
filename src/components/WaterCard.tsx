@@ -48,9 +48,9 @@ export default function WaterCard() {
       </View>
       <View style={s.track}><View style={[s.fill, { width: `${Math.max(pct, 1)}%` }]} /></View>
       <View style={s.btnRow}>
-        <TouchableOpacity style={s.btn} onPress={() => add(250)} activeOpacity={0.8}><Text style={s.btnTxt}>+250 ml</Text></TouchableOpacity>
-        <TouchableOpacity style={s.btn} onPress={() => add(500)} activeOpacity={0.8}><Text style={s.btnTxt}>+500 ml</Text></TouchableOpacity>
-        <TouchableOpacity style={s.undo} onPress={() => add(-250)} activeOpacity={0.8} disabled={ml <= 0}>
+        <TouchableOpacity style={s.btn} onPress={() => add(250)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Add 250 millilitres of water"><Text style={s.btnTxt}>+250 ml</Text></TouchableOpacity>
+        <TouchableOpacity style={s.btn} onPress={() => add(500)} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Add 500 millilitres of water"><Text style={s.btnTxt}>+500 ml</Text></TouchableOpacity>
+        <TouchableOpacity style={s.undo} onPress={() => add(-250)} activeOpacity={0.8} disabled={ml <= 0} accessibilityRole="button" accessibilityLabel="Remove 250 millilitres of water">
           <Text style={[s.undoTxt, ml <= 0 && { opacity: 0.4 }]}>Undo</Text>
         </TouchableOpacity>
       </View>
