@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Switch, Modal, KeyboardAvoidingView, Platform,
+  TextInput, Alert, ActivityIndicator, Switch, Modal, KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleDailyWorkoutReminder, cancelDailyWorkoutReminder } from '../lib/notifications';
@@ -322,6 +322,21 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
             </TouchableOpacity>
             <TouchableOpacity style={[s.row, s.rowLast]} onPress={handleDeleteAccount}>
               <Text style={[s.rowLabel, { color: t.red }]}>Delete Account</Text>
+              <Text style={s.rowChevron}>›</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Legal */}
+        <View style={s.section}>
+          <SectionLabel label="LEGAL" s={s} />
+          <View style={s.card}>
+            <TouchableOpacity style={s.row} onPress={() => Linking.openURL('https://www.viaxe.co.uk/privacy.html')}>
+              <Text style={s.rowLabel}>Privacy Policy</Text>
+              <Text style={s.rowChevron}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.row, s.rowLast]} onPress={() => Linking.openURL('https://www.viaxe.co.uk/terms.html')}>
+              <Text style={s.rowLabel}>Terms of Service</Text>
               <Text style={s.rowChevron}>›</Text>
             </TouchableOpacity>
           </View>
