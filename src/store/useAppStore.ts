@@ -8,6 +8,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
+import { AppState as RNAppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../lib/api';
 import { localDateKey, addDaysKey, yesterdayKey } from '../lib/date';
@@ -301,7 +302,10 @@ function useCreateAppStore() {
   }, [state]);
 
   useEffect(() => {
-    const load = async () => {
+    // isInitial=false is a foreground re-sync: pull fresh server data (updated
+    // plan, macros, messages) and merge it, WITHOUT resetting the visible state
+    // back to the cached snapshot first.
+    const load = async (isInitial = true) => {
       const token = await AsyncStorage.getItem('@viaxe_token');
       const raw   = await AsyncStorage.getItem(KEY);
 
@@ -324,7 +328,10 @@ function useCreateAppStore() {
           };
         } catch {}
       }
-      replaceState(base);
+      // On a foreground re-sync keep the live state visible; only the initial
+      // mount swaps in the cached snapshot. Server merges below update both.
+      if (isInitial) replaceState(base);
+      else base = { ...stateRef.current };
 
       if (!token || token === 'demo') return;
 
@@ -555,7 +562,19 @@ function useCreateAppStore() {
       await AsyncStorage.setItem(KEY, JSON.stringify(base));
     };
 
-    load();
+    load(true);
+
+    // Re-sync when the app returns to the foreground so coach updates (a new or
+    // edited plan, macro targets, messages) arrive without needing a restart.
+    // Throttled so rapid background/foreground flips don't spam the API.
+    let lastSync = Date.now();
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next === 'active' && Date.now() - lastSync > 8000) {
+        lastSync = Date.now();
+        load(false);
+      }
+    });
+    return () => sub.remove();
   }, [replaceState]);
 
   const persist = useCallback(async (update: AppState | ((prev: AppState) => AppState)) => {
