@@ -39,6 +39,10 @@ const headTags = `
       /* Fill the whole viewport (incl. the iOS home-indicator safe area) with the
          app's asphalt ground, so no white shows below the tab bar in standalone. */
       html, body, #root { background-color: #171714; }
+      /* Use the DYNAMIC viewport so the app reaches the true bottom edge (no gap
+         under the tab bar) as the browser UI shows/hides. */
+      html { height: 100%; }
+      body, #root { height: 100vh; height: 100dvh; min-height: 100dvh; }
       body { overscroll-behavior: none; }
     </style>`;
 
