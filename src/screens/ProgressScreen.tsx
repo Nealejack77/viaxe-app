@@ -11,6 +11,7 @@ import { useAppStore, WeightEntry } from '../store/useAppStore';
 import { PlusIcon, ActivityIcon, CameraIcon } from '../components/Icons';
 import SectionLabel from '../components/SectionLabel';
 import ActivityCalendar from '../components/ActivityCalendar';
+import { confirmAction } from '../lib/confirm';
 
 const CHART_W = 280;
 const CHART_H = 80;
@@ -226,10 +227,11 @@ export default function ProgressScreen() {
                   <Text style={{ fontSize: 15, fontWeight: '700', color: t.text, flex: 1, fontFamily: 'BarlowCondensed-Black' }}>{entry.weight.toFixed(1)} kg</Text>
                   {entry.notes ? <Text style={{ fontSize: 10, color: t.textMuted, marginRight: 4 }}>{entry.notes}</Text> : null}
                   <TouchableOpacity
-                    onPress={() => Alert.alert('Remove weight?', `Delete the ${entry.weight.toFixed(1)} kg entry from ${entry.date}?`, [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Remove', style: 'destructive', onPress: () => store.removeWeight(entry.date) },
-                    ])}
+                    onPress={async () => {
+                      if (await confirmAction('Remove weight?', `Delete the ${entry.weight.toFixed(1)} kg entry from ${entry.date}?`, 'Remove')) {
+                        store.removeWeight(entry.date);
+                      }
+                    }}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     accessibilityRole="button"
                     accessibilityLabel={`Remove weight entry from ${entry.date}`}
