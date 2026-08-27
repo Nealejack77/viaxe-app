@@ -1,7 +1,8 @@
 {
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "npx expo export --platform web && node scripts/pwa-inject.js",
   "outputDirectory": "dist",
   "routes": [
+    { "src": "^/sw.js$", "headers": { "cache-control": "no-cache" }, "dest": "/sw.js" },
     { "handle": "filesystem" },
     { "src": "^/.*", "dest": "/index.html" }
   ]
