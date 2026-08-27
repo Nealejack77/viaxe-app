@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { notifySessionExpired } from '../lib/session';
 
 export interface WeightEntry {
   id?: string;
@@ -312,6 +313,12 @@ export function useAppStore() {
       // ── Load auth profile ───────────────────────────────────────────────
       try {
         const meRes = await fetch(`${BASE}/auth?action=me`, { headers });
+        if (meRes.status === 401) {
+          // The stored token is no longer valid — every authed call (macros,
+          // food search/log, messaging) would 401. Clear it and route to Login.
+          await notifySessionExpired();
+          return;
+        }
         if (meRes.ok) {
           const { profile } = await meRes.json();
           const updates: Partial<AppState> = {};
@@ -360,12 +367,19 @@ export function useAppStore() {
           const dataRes = await fetch(`${BASE}/data?ptId=${currentState.ptId}`, { headers });
           if (dataRes.ok) {
             const ptData = await dataRes.json();
-            const clientRecord = ptData?.clients?.find(
-              (c: any) =>
-                c.email?.toLowerCase() === currentState.profile.email?.toLowerCase() ||
-                (currentState.clientId && c.clientId && c.clientId === currentState.clientId) ||
-                (currentState.localClientId != null && c.id != null && String(c.id) === currentState.localClientId)
-            );
+            const roster: any[] = Array.isArray(ptData?.clients) ? ptData.clients : [];
+            const clientRecord =
+              roster.find(
+                (c: any) =>
+                  c.email?.toLowerCase() === currentState.profile.email?.toLowerCase() ||
+                  (currentState.clientId && c.clientId && String(c.clientId) === String(currentState.clientId)) ||
+                  (currentState.localClientId != null && c.id != null && String(c.id) === String(currentState.localClientId))
+              ) ||
+              // The server already redacts a client's /api/data response down to their
+              // OWN record, so if exactly one record comes back it is definitively
+              // theirs. This keeps macros/nutrition syncing even when the id-bridge
+              // (clientId/localId/email) drifts and the explicit match above misses.
+              (roster.length === 1 ? roster[0] : undefined);
             const progUpdates: Partial<AppState> = {};
             const mapDays = (days: any[]) =>
               days

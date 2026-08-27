@@ -48,63 +48,43 @@ export type Tokens = {
 // resolves to SF Mono / JetBrains Mono; native falls back to its system mono.
 const MONO = 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace';
 
-// VIAXE "Performance OS" palette — warm charcoal stage, bone ink, ember heartbeat.
-// Charcoal #1E1F22 is sampled from the real //VIAXE logo; ink is the logo bone.
+// VIAXE "grit" palette — asphalt ground, chalk ink, ember intensity, acid action.
+// Source of truth is src/theme/grit.ts; these map the legacy token names onto it
+// so every screen adopts the gritty base while screens are migrated one by one.
 export const darkTokens: Tokens = {
-  bg:              '#161719',
-  bg2:             '#1A1B1E',
-  bg3:             '#1E1F22',
-  surface:         '#1E1F22',
-  elevated:        '#26282B',
-  text:            '#ECE8DD',
-  textSec:         '#9B968C',
-  textMuted:       '#6A665E',
-  border:          '#2C2E31',
-  glass:           'rgba(236,232,221,0.035)',
-  glassEl:         'rgba(236,232,221,0.06)',
-  glassBorder:     'rgba(236,232,221,0.10)',
-  inputBg:         '#303236',
-  red:             '#E8432D',
-  redDim:          'rgba(232,67,45,0.12)',
-  redBorder:       'rgba(232,67,45,0.30)',
-  green:           '#54C99A',
-  gold:            '#F2A33C',
+  bg:              '#171714', // asphalt
+  bg2:             '#131311',
+  bg3:             '#0F0F0D',
+  surface:         '#24231F', // iron
+  elevated:        '#2E2C27',
+  text:            '#E9E5DA', // chalk
+  textSec:         '#AAA69D', // muted
+  textMuted:       '#77736A', // concrete
+  border:          'rgba(233,229,218,0.16)', // line
+  glass:           'rgba(233,229,218,0.035)',
+  glassEl:         'rgba(233,229,218,0.06)',
+  glassBorder:     'rgba(233,229,218,0.14)',
+  inputBg:         '#2A2925',
+  red:             '#FF4B22', // ember (intensity / focal action)
+  redDim:          'rgba(255,75,34,0.12)',
+  redBorder:       'rgba(255,75,34,0.30)',
+  green:           '#D7FF45', // acid (action / completion)
+  gold:            '#FFB547', // warning
   purple:          '#8B7CF6',
   statusBar:       'light',
-  tabBar:          'rgba(22,23,25,0.97)',
-  tabBorder:       '#2C2E31',
-  tabIconInactive: '#6A665E',
+  tabBar:          'rgba(9,9,8,0.97)', // black
+  tabBorder:       'rgba(233,229,218,0.18)',
+  tabIconInactive: '#77736A',
   mono:            MONO,
   scheme:          'dark',
 };
 
-export const lightTokens: Tokens = {
-  bg:              '#F4F3F0',
-  bg2:             '#FFFFFF',
-  bg3:             '#ECEAE4',
-  surface:         '#FFFFFF',
-  elevated:        '#ECEAE4',
-  text:            '#1A1A1A',
-  textSec:         '#5C574E',
-  textMuted:       'rgba(0,0,0,0.40)',
-  border:          'rgba(0,0,0,0.10)',
-  glass:           'rgba(0,0,0,0.025)',
-  glassEl:         'rgba(0,0,0,0.05)',
-  glassBorder:     'rgba(0,0,0,0.10)',
-  inputBg:         'rgba(0,0,0,0.05)',
-  red:             '#C7381F',
-  redDim:          'rgba(199,56,31,0.08)',
-  redBorder:       'rgba(199,56,31,0.22)',
-  green:           '#2E9E72',
-  gold:            '#B5751F',
-  purple:          '#5B4FD0',
-  statusBar:       'dark',
-  tabBar:          'rgba(244,243,240,0.97)',
-  tabBorder:       'rgba(0,0,0,0.10)',
-  tabIconInactive: 'rgba(0,0,0,0.30)',
-  mono:            MONO,
-  scheme:          'light',
-};
+// The grit identity is a committed DARK brand — there is no light variant. The
+// "light" token set therefore mirrors the grit dark palette, so every screen is
+// black like Home regardless of the resolved OS/theme mode. (The Home screen
+// hardcodes grit colours; keeping both token sets grit-dark prevents any screen
+// from diverging into a pale ground.)
+export const lightTokens: Tokens = { ...darkTokens };
 
 type ThemeContextType = {
   t: Tokens;

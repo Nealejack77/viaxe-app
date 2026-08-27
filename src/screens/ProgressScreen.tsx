@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore, WeightEntry } from '../store/useAppStore';
 import { PlusIcon, ActivityIcon, CameraIcon } from '../components/Icons';
+import SectionLabel from '../components/SectionLabel';
 import ActivityCalendar from '../components/ActivityCalendar';
 
 const CHART_W = 280;
@@ -55,30 +56,30 @@ function WeightChart({ data, t }: { data: WeightEntry[]; t: Tokens }) {
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.bg },
   scroll: { padding: 20, paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  title: { fontSize: 36, fontWeight: '900', color: t.text, letterSpacing: -1.5 },
-  toggle: { flexDirection: 'row', backgroundColor: t.glass, borderRadius: 10, padding: 2 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 },
+  title: { fontFamily: 'BarlowCondensed-Black', fontSize: 44, lineHeight: 40, color: t.text, letterSpacing: -0.6, textTransform: 'uppercase', flex: 1 },
+  toggle: { flexDirection: 'row', backgroundColor: t.surface, borderRadius: 3, padding: 2 },
   toggleBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   toggleBtnOn: { backgroundColor: t.red },
   toggleTxt: { fontSize: 9, fontWeight: '700', letterSpacing: 1, color: t.textMuted },
-  card: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: t.surface, borderRadius: 4, padding: 18, marginBottom: 14 },
   cardLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 4 },
   chartTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  bigVal: { fontSize: 32, fontWeight: '700', color: t.text, fontFamily: t.mono, lineHeight: 38 },
+  bigVal: { fontSize: 32, fontWeight: '700', color: t.text, fontFamily: 'BarlowCondensed-Black', lineHeight: 38 },
   bigValSub: { fontSize: 14, color: t.textMuted },
   delta: { fontSize: 12, fontWeight: '700', marginTop: 2 },
   badge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, borderWidth: 1, alignSelf: 'flex-start' },
   logRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   input: { flex: 1, backgroundColor: t.inputBg, borderRadius: 12, padding: 12, fontSize: 15, color: t.text, borderWidth: 1, borderColor: t.border },
-  logWeightBtn: { width: 44, height: 44, backgroundColor: t.red, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  statCard: { flex: 1, minWidth: '45%', backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 16, padding: 14 },
+  logWeightBtn: { width: 44, height: 44, backgroundColor: t.green, borderRadius: 3, alignItems: 'center', justifyContent: 'center' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  statCard: { flex: 1, minWidth: '45%', backgroundColor: t.surface, borderRadius: 4, padding: 16 },
   statLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 6 },
-  statVal: { fontSize: 24, fontWeight: '700', color: t.text, fontFamily: t.mono, lineHeight: 28 },
+  statVal: { fontSize: 24, fontWeight: '700', color: t.text, fontFamily: 'BarlowCondensed-Black', lineHeight: 28 },
   statUnit: { fontSize: 12, color: t.textMuted },
   statDelta: { fontSize: 10, fontWeight: '700', color: t.green, marginTop: 3 },
-  achieveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,214,10,0.08)', borderColor: 'rgba(255,214,10,0.2)', borderWidth: 1, borderRadius: 16, padding: 14, marginBottom: 20 },
-  achieveLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.gold, marginBottom: 3 },
+  achieveCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: t.surface, borderRadius: 4, padding: 16, marginBottom: 20 },
+  achieveLabel: { fontFamily: 'IBMPlexSans-Bold', fontSize: 9, letterSpacing: 1.5, color: t.green, marginBottom: 3, textTransform: 'uppercase' },
   achieveName: { fontSize: 14, fontWeight: '800', color: t.text },
   sessionIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: t.redDim, alignItems: 'center', justifyContent: 'center' },
   bwEntry: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: t.border },
@@ -90,8 +91,8 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   compareTag: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted, textAlign: 'center' },
   timelinePhoto: { width: 86, aspectRatio: 3 / 4, borderRadius: 10, backgroundColor: t.glass, marginRight: 8 },
   timelineDate: { fontSize: 9, color: t.textMuted, textAlign: 'center', marginTop: 3 },
-  photoCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, backgroundColor: t.redDim, borderWidth: 1, borderColor: t.redBorder, marginTop: 12 },
-  photoCtaTxt: { fontSize: 12, fontWeight: '700', color: t.red },
+  photoCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 3, backgroundColor: t.surface, marginTop: 12 },
+  photoCtaTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, letterSpacing: 0.6, color: t.text },
 });
 
 export default function ProgressScreen() {
@@ -147,7 +148,7 @@ export default function ProgressScreen() {
 
           {/* Header */}
           <View style={s.header}>
-            <Text style={s.title}>Progress.</Text>
+            <Text style={s.title}>THE WORK{'\n'}IS <Text style={{ color: t.green }}>WORKING.</Text></Text>
             <View style={s.toggle}>
               {(['4w', '8w', 'all'] as const).map(v => (
                 <TouchableOpacity key={v} onPress={() => setView(v)} style={[s.toggleBtn, view === v && s.toggleBtnOn]}>
@@ -210,7 +211,7 @@ export default function ProgressScreen() {
                 onSubmitEditing={handleLogWeight}
               />
               <TouchableOpacity onPress={handleLogWeight} style={s.logWeightBtn} accessibilityRole="button" accessibilityLabel="Log today's weight">
-                <PlusIcon size={18} color="#fff" strokeWidth={2.5} />
+                <PlusIcon size={18} color="#171714" strokeWidth={2.8} />
               </TouchableOpacity>
             </View>
           </View>
@@ -221,8 +222,8 @@ export default function ProgressScreen() {
               <Text style={s.cardLabel}>WEIGHT HISTORY</Text>
               {store.weightLog.slice().reverse().slice(0, 10).map((entry, i) => (
                 <View key={`${entry.date}-${i}`} style={s.bwEntry}>
-                  <Text style={{ fontSize: 13, color: t.textMuted, width: 90, fontFamily: t.mono }}>{entry.date}</Text>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: t.text, flex: 1, fontFamily: t.mono }}>{entry.weight.toFixed(1)} kg</Text>
+                  <Text style={{ fontSize: 13, color: t.textMuted, width: 90, fontFamily: 'BarlowCondensed-Black' }}>{entry.date}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: t.text, flex: 1, fontFamily: 'BarlowCondensed-Black' }}>{entry.weight.toFixed(1)} kg</Text>
                   {entry.notes ? <Text style={{ fontSize: 10, color: t.textMuted }}>{entry.notes}</Text> : null}
                 </View>
               ))}
@@ -255,7 +256,7 @@ export default function ProgressScreen() {
 
           {/* Achievement */}
           <View style={s.achieveCard}>
-            <Text style={{ fontSize: 26, fontWeight: '900', color: t.gold, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: t.gold, fontFamily: 'BarlowCondensed-Black', letterSpacing: -1 }}>//</Text>
             <View style={{ flex: 1 }}>
               <Text style={s.achieveLabel}>MILESTONE</Text>
               <Text style={s.achieveName}>
@@ -369,7 +370,7 @@ export default function ProgressScreen() {
           )}
 
           {/* Activity calendar */}
-          <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginTop: 24, marginBottom: 12 }}>ACTIVITY CALENDAR</Text>
+          <SectionLabel style={{ marginTop: 24, marginBottom: 12 }}>ACTIVITY CALENDAR</SectionLabel>
           <ActivityCalendar />
 
         </ScrollView>

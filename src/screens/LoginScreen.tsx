@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, Tokens } from '../context/ThemeContext';
+import { Wordmark } from '../components/grit';
 
 const API = 'https://www.viaxe.co.uk/api/auth?action=client-login';
 
@@ -17,19 +18,21 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   outer: { flex: 1, backgroundColor: t.bg },
   inner: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   logoWrap: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 38, fontWeight: '900', color: t.text, letterSpacing: -1 },
-  logoSub: { fontSize: 9, fontWeight: '700', letterSpacing: 2.5, color: t.textMuted, marginTop: 4 },
-  card: { backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 20, padding: 24, marginBottom: 20 },
-  heading: { fontSize: 20, fontWeight: '800', color: t.text, marginBottom: 4, letterSpacing: -0.3 },
+  kickerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
+  kickerSlash: { fontFamily: 'BarlowCondensed-Black', fontSize: 9.5, fontWeight: '700', letterSpacing: 2.5, color: t.red, marginRight: 6 },
+  kicker: { fontFamily: 'BarlowCondensed-Black', fontSize: 9.5, fontWeight: '700', letterSpacing: 2.5, color: t.textMuted },
+  card: { backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 4, padding: 24, marginBottom: 20, overflow: 'hidden' },
+  cardRule: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, backgroundColor: t.green },
+  heading: { fontFamily: 'BarlowCondensed-Black', fontSize: 34, lineHeight: 32, color: t.text, marginBottom: 4, letterSpacing: -0.4, textTransform: 'uppercase' },
   sub: { fontSize: 12, color: t.textSec, marginBottom: 24 },
   fieldWrap: { marginBottom: 16 },
-  label: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted, marginBottom: 6 },
+  label: { fontFamily: 'BarlowCondensed-Black', fontSize: 9.5, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted, marginBottom: 6, textTransform: 'uppercase' },
   input: { backgroundColor: t.inputBg, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, color: t.text },
   pwRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   eyeBtn: { padding: 4 },
   err: { fontSize: 12, color: t.red, marginBottom: 12, textAlign: 'center' },
-  loginBtn: { backgroundColor: t.red, borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 4 },
-  loginTxt: { fontSize: 13, fontWeight: '800', color: '#fff', letterSpacing: 1 },
+  loginBtn: { backgroundColor: t.green, borderRadius: 3, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  loginTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, color: '#171714', letterSpacing: 1.4, textTransform: 'uppercase' },
   demoBtn: { alignItems: 'center', paddingVertical: 12 },
   demoTxt: { fontSize: 13, color: t.red, fontWeight: '600' },
   hint: { textAlign: 'center', fontSize: 11, color: t.textMuted, marginTop: 16, lineHeight: 17 },
@@ -106,13 +109,16 @@ export default function LoginScreen({ onLogin }: Props) {
       <SafeAreaView style={s.inner}>
 
         <View style={s.logoWrap}>
-          <Text style={s.logo}><Text style={{ color: t.red }}>V</Text>IAXE</Text>
-          <Text style={s.logoSub}>AI PERFORMANCE COACHING</Text>
+          <Wordmark size={52} color={t.text} />
+          <View style={s.kickerRow}>
+            <Text style={s.kicker}>STRENGTH COACHING</Text>
+          </View>
         </View>
 
         <View style={s.card}>
-          <Text style={s.heading}>Welcome back</Text>
-          <Text style={s.sub}>Log in with your coaching portal credentials</Text>
+          <View style={s.cardRule} />
+          <Text style={s.heading}>Back at it.</Text>
+          <Text style={s.sub}>Sign in and get to work.</Text>
 
           <View style={s.fieldWrap}>
             <Text style={s.label}>USERNAME OR EMAIL</Text>
@@ -152,7 +158,7 @@ export default function LoginScreen({ onLogin }: Props) {
 
           <TouchableOpacity style={s.loginBtn} onPress={submit} disabled={loading}>
             {loading
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color="#171714" />
               : <Text style={s.loginTxt}>LOG IN</Text>}
           </TouchableOpacity>
 

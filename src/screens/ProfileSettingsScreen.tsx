@@ -22,7 +22,7 @@ type Props = StackScreenProps<RootStackParamList, 'Profile'> & { onLogout: () =>
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: t.bg },
   header:       { flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: t.border },
-  headerTitle:  { flex: 1, fontSize: 17, fontWeight: '800', color: t.text, textAlign: 'center', letterSpacing: -0.3 },
+  headerTitle:  { flex: 1, fontFamily: 'BarlowCondensed-Black', fontSize: 22, color: t.text, textAlign: 'center', letterSpacing: 0, textTransform: 'uppercase' },
   closeBtn:     { width: 32, height: 32, borderRadius: 16, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, alignItems: 'center', justifyContent: 'center' },
 
   // Avatar
@@ -393,7 +393,7 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
       <Modal visible={pwModal} transparent animationType="fade" onRequestClose={() => setPwModal(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 24 }}>
-            <View style={{ backgroundColor: t.surface, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: t.border }}>
+            <View style={{ backgroundColor: t.surface, borderRadius: 4, padding: 22, borderWidth: 1, borderColor: t.border }}>
               <Text style={{ fontSize: 18, fontWeight: '800', color: t.text, marginBottom: 4 }}>Change password</Text>
               <Text style={{ fontSize: 12.5, color: t.textSec, marginBottom: 16 }}>Enter your current password and a new one (min 8 characters).</Text>
               <TextInput style={s.input} placeholder="Current password" placeholderTextColor={t.textMuted} secureTextEntry value={curPw} onChangeText={setCurPw} autoCapitalize="none" />

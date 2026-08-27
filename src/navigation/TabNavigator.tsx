@@ -14,10 +14,10 @@ import ARIAScreen from '../screens/ARIAScreen';
 const Tab = createBottomTabNavigator();
 
 const TABS = [
-  { name: 'Home',      label: 'HOME',  Icon: HomeIcon,     screen: HomeScreen },
+  { name: 'Home',      label: 'TODAY', Icon: HomeIcon,     screen: HomeScreen },
   { name: 'Train',     label: 'TRAIN', Icon: ZapIcon,      screen: TrainScreen },
-  { name: 'Nutrition', label: 'FOOD',  Icon: PieChartIcon, screen: NutritionScreen },
-  { name: 'Progress',  label: 'STATS', Icon: BarChartIcon, screen: ProgressScreen },
+  { name: 'Nutrition', label: 'FUEL',  Icon: PieChartIcon, screen: NutritionScreen },
+  { name: 'Progress',  label: 'PROGRESS', Icon: BarChartIcon, screen: ProgressScreen },
   { name: 'Coach',     label: 'COACH', Icon: UserIcon,     screen: CoachScreen },
   { name: 'ARIA',      label: 'ARIA',  Icon: CpuIcon,      screen: ARIAScreen },
 ] as const;
@@ -49,7 +49,7 @@ export default function TabNavigator({ onLogout }: Props) {
           return (
             <View style={{ alignItems: 'center', gap: 2 }}>
               <tab.Icon size={19} color={color} strokeWidth={focused ? 2.5 : 1.8} />
-              <Text style={{ fontSize: 7, fontWeight: '700', letterSpacing: 0.4, color }}>
+              <Text style={{ fontFamily: 'IBMPlexSans-Bold', fontSize: 9, letterSpacing: 0.7, textTransform: 'uppercase', color }}>
                 {tab.label}
               </Text>
             </View>

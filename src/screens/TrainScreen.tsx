@@ -10,6 +10,7 @@ import { useTheme, Tokens } from '../context/ThemeContext';
 import { WORKOUTS, Workout } from '../data/workouts';
 import { useAppStore, ProgramDay, WorkoutExercise, CompletedSet } from '../store/useAppStore';
 import { XIcon, CheckIcon, PlusIcon } from '../components/Icons';
+import SectionLabel from '../components/SectionLabel';
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
@@ -133,38 +134,38 @@ function buildLiveExercises(workout: Workout): LiveExercise[] {
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.bg },
   scroll: { padding: 20, paddingBottom: 40 },
-  selectorTitle: { fontSize: 48, fontWeight: '900', color: t.text, letterSpacing: -2, lineHeight: 50, marginBottom: 8 },
+  selectorTitle: { fontFamily: 'BarlowCondensed-Black', fontSize: 60, color: t.text, letterSpacing: -1, lineHeight: 54, marginBottom: 8, textTransform: 'uppercase' },
   planTag: { backgroundColor: t.redDim, borderWidth: 1, borderColor: t.redBorder, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 6 },
   planTagTxt: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: t.red },
   selectorSub: { fontSize: 14, color: t.textSec, marginBottom: 28 },
-  workoutCard: { borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: t.glassBorder, overflow: 'hidden' },
+  workoutCard: { borderRadius: 4, marginBottom: 12, backgroundColor: t.surface, overflow: 'hidden' },
   workoutCardInner: { padding: 20 },
   workoutTagBg: { backgroundColor: t.glassEl, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  workoutName: { fontSize: 22, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
+  workoutName: { fontFamily: 'BarlowCondensed-Black', fontSize: 26, lineHeight: 26, color: t.text, letterSpacing: -0.4, marginBottom: 4, textTransform: 'uppercase' },
   workoutMeta: { fontSize: 13, color: t.textSec, marginBottom: 16 },
   startBtn: { backgroundColor: t.redDim, borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: t.redBorder },
   startBtnTxt: { fontSize: 12, fontWeight: '800', color: t.red, letterSpacing: 1 },
   trainHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 12 },
-  trainTitle: { fontSize: 11, fontWeight: '800', color: t.text, letterSpacing: 0.5 },
-  timerTxt: { fontSize: 22, fontWeight: '700', fontFamily: t.mono, marginTop: 2, color: t.red },
-  liveBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginHorizontal: 20, backgroundColor: t.redDim, borderColor: t.redBorder, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8 },
+  trainTitle: { fontFamily: 'IBMPlexSans-Bold', fontSize: 11, color: t.text, letterSpacing: 1.2, textTransform: 'uppercase' },
+  timerTxt: { fontSize: 22, fontWeight: '700', fontFamily: 'BarlowCondensed-Black', marginTop: 2, color: t.red },
+  liveBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginHorizontal: 20, backgroundColor: t.surface, borderRadius: 4, padding: 12, marginBottom: 8 },
   lmItem: { alignItems: 'center' },
-  lmVal: { fontSize: 18, fontWeight: '700', color: t.text, fontFamily: t.mono },
+  lmVal: { fontSize: 18, fontWeight: '700', color: t.text, fontFamily: 'BarlowCondensed-Black' },
   lmLabel: { fontSize: 8, letterSpacing: 1.5, color: t.red, fontWeight: '700', marginTop: 1 },
   lmDiv: { width: 1, height: 30, backgroundColor: t.border },
   restOverlay: { position: 'absolute', inset: 0, backgroundColor: t.scheme === 'dark' ? 'rgba(8,8,8,0.96)' : 'rgba(247,247,248,0.97)', zIndex: 50, alignItems: 'center', justifyContent: 'center' },
-  restLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 4, color: t.textMuted, marginBottom: 8 },
-  restCount: { fontSize: 80, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -3 },
+  restLabel: { fontFamily: 'IBMPlexSans-Bold', fontSize: 13, letterSpacing: 1.5, color: t.textSec, marginBottom: 8, textTransform: 'uppercase' },
+  restCount: { fontSize: 80, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', letterSpacing: -3 },
   restSkip: { marginTop: 32, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: t.glass, borderRadius: 12, borderWidth: 1, borderColor: t.glassBorder },
   restSkipTxt: { fontSize: 13, fontWeight: '700', color: t.textSec, letterSpacing: 1 },
-  exCard: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 20, padding: 18, marginBottom: 14 },
+  exCard: { backgroundColor: t.surface, borderRadius: 4, padding: 18, marginBottom: 14 },
   exLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 2, color: t.red, marginBottom: 4 },
-  exName: { fontSize: 24, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
+  exName: { fontFamily: 'BarlowCondensed-Black', fontSize: 32, lineHeight: 32, color: t.text, letterSpacing: -0.4, marginBottom: 4, textTransform: 'uppercase' },
   exPlanned: { fontSize: 11, color: t.textMuted, marginBottom: 14 },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, backgroundColor: t.elevated, borderRadius: 10, padding: 10, borderLeftWidth: 2, borderLeftColor: 'transparent' },
   setRowActive: { borderLeftColor: t.red, backgroundColor: t.redDim },
   setRowDone: { opacity: 0.5 },
-  setNum: { fontSize: 12, fontWeight: '700', color: t.textMuted, width: 20, fontFamily: t.mono },
+  setNum: { fontSize: 12, fontWeight: '700', color: t.textMuted, width: 20, fontFamily: 'BarlowCondensed-Black' },
   setNumActive: { color: t.red },
   setNumDone: { color: t.green },
   setInput: { flex: 1, backgroundColor: t.inputBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 15, color: t.text, borderWidth: 1, borderColor: t.border, textAlign: 'center' },
@@ -179,20 +180,20 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   logBtnTxt: { fontSize: 14, fontWeight: '800', color: '#fff', letterSpacing: 1 },
   addExBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.glass, marginBottom: 8 },
   addExTxt: { fontSize: 13, fontWeight: '700', color: t.textSec },
-  queueItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.glass, borderRadius: 12, padding: 12, marginBottom: 6 },
-  queueNum: { fontSize: 10, color: t.textMuted, width: 18, fontFamily: t.mono },
+  queueItem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.surface, borderRadius: 3, padding: 12, marginBottom: 6 },
+  queueNum: { fontSize: 10, color: t.textMuted, width: 18, fontFamily: 'BarlowCondensed-Black' },
   queueName: { flex: 1, fontSize: 13, fontWeight: '600', color: t.textSec },
-  queueMeta: { fontSize: 10, color: t.textMuted, fontFamily: t.mono },
+  queueMeta: { fontSize: 10, color: t.textMuted, fontFamily: 'BarlowCondensed-Black' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, width: '100%', maxHeight: '90%' },
-  modalTitle: { fontSize: 20, fontWeight: '900', color: t.text, letterSpacing: -0.5, marginBottom: 4 },
+  modalTitle: { fontFamily: 'BarlowCondensed-Black', fontSize: 30, lineHeight: 30, color: t.text, letterSpacing: -0.4, marginBottom: 4, textTransform: 'uppercase' },
   modalSub: { fontSize: 13, color: t.textSec, marginBottom: 16 },
   modalClose: { position: 'absolute', top: 20, right: 20 },
   searchInput: { backgroundColor: t.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: t.text, borderWidth: 1, borderColor: t.border, marginBottom: 12 },
   exListItem: { paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: t.border },
   exListItemTxt: { fontSize: 15, color: t.text, fontWeight: '500' },
   completionCard: { backgroundColor: t.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 32, alignItems: 'center', width: '100%' },
-  completionTitle: { fontSize: 36, fontWeight: '900', color: t.text, letterSpacing: -1.5, textAlign: 'center', marginBottom: 8 },
+  completionTitle: { fontFamily: 'BarlowCondensed-Black', fontSize: 56, lineHeight: 50, color: t.text, letterSpacing: -1, textAlign: 'center', marginBottom: 8, textTransform: 'uppercase' },
   completionSub: { fontSize: 14, color: t.textSec, textAlign: 'center', marginBottom: 6 },
   rpeRow: { flexDirection: 'row', gap: 8, marginBottom: 24, flexWrap: 'wrap', justifyContent: 'center' },
   rpeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: t.border, backgroundColor: t.glass },
@@ -206,10 +207,10 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   configLabel: { fontSize: 9, color: t.textMuted, fontWeight: '700', letterSpacing: 1, marginBottom: 4 },
   // Exercise selector chips (non-linear navigation)
   chipBar: { paddingHorizontal: 20, paddingBottom: 10, gap: 8, flexDirection: 'row' },
-  chip: { minWidth: 40, height: 40, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: t.glassBorder, backgroundColor: t.glass, alignItems: 'center', justifyContent: 'center' },
+  chip: { minWidth: 40, height: 40, paddingHorizontal: 12, borderRadius: 3, backgroundColor: t.surface, alignItems: 'center', justifyContent: 'center' },
   chipActive: { borderColor: t.red, backgroundColor: t.redDim },
   chipDone: { borderColor: 'rgba(52,199,89,0.35)', backgroundColor: 'rgba(52,199,89,0.10)' },
-  chipTxt: { fontSize: 13, fontWeight: '800', color: t.textMuted, fontFamily: t.mono },
+  chipTxt: { fontSize: 13, fontWeight: '800', color: t.textMuted, fontFamily: 'BarlowCondensed-Black' },
   chipTxtActive: { color: t.red },
   chipTxtDone: { color: t.green },
   // Exit confirmation modal
@@ -236,19 +237,19 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
     <View style={s.container}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={s.selectorTitle}>Today's{'\n'}Plan.</Text>
+          <Text style={s.selectorTitle}>DO THE{'\n'}<Text style={{ color: t.green }}>WORK.</Text></Text>
           {programName ? (
             <View style={s.planTag}><Text style={s.planTagTxt}>{programName.toUpperCase()}</Text></View>
           ) : null}
-          <Text style={s.selectorSub}>Select a session to begin</Text>
+          <Text style={s.selectorSub}>Pick your session. Then get after it.</Text>
 
           {workouts.map((w, i) => (
             <TouchableOpacity key={w.id} onPress={() => onSelect(w)} activeOpacity={0.85} style={s.workoutCard}>
               {i === 0 ? (
-                <LinearGradient colors={['#E8432D', '#c73520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <LinearGradient colors={['#F55139', '#C93C28']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <View style={s.workoutCardInner}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                      <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
+                      <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', letterSpacing: -1 }}>//</Text>
                       <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
                         <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: 'rgba(255,255,255,0.9)' }}>{w.tag}</Text>
                       </View>
@@ -263,7 +264,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
               ) : (
                 <View style={[s.workoutCardInner, { backgroundColor: t.glass }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
+                    <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', letterSpacing: -1 }}>//</Text>
                     <View style={s.workoutTagBg}>
                       <Text style={{ fontSize: 8, fontWeight: '700', letterSpacing: 1.5, color: t.textMuted }}>{w.tag}</Text>
                     </View>
@@ -279,10 +280,10 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
           {/* Recent sessions */}
           {store.sessions.length > 0 && (
             <View style={{ marginTop: 8 }}>
-              <Text style={{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 10 }}>RECENT SESSIONS</Text>
+              <SectionLabel style={{ marginBottom: 10 }}>RECENT SESSIONS</SectionLabel>
               {store.sessions.slice(0, 5).map(sess => (
                 <View key={sess.id} style={[s.queueItem, { marginBottom: 8 }]}>
-                  <Text style={{ fontSize: 16, fontWeight: '900', color: t.textMuted, fontFamily: t.mono, letterSpacing: -1 }}>//</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: t.textMuted, fontFamily: 'BarlowCondensed-Black', letterSpacing: -1 }}>//</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: t.text }}>{sess.workoutName}</Text>
                     <Text style={{ fontSize: 10, color: t.textMuted }}>{sess.date} · {sess.duration} min · {sess.setsCompleted} sets</Text>
@@ -404,7 +405,7 @@ function AddExerciseModal({ visible, onClose, onAdd }: {
                   </View>
                 </View>
                 <TouchableOpacity onPress={handleAdd}>
-                  <LinearGradient colors={['#E8432D', '#c73520']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <LinearGradient colors={['#F55139', '#C93C28']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                     <Text style={s.logBtnTxt}>ADD TO WORKOUT</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -605,7 +606,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
 
       {restCount !== null && (
         <View style={s.restOverlay}>
-          <Text style={s.restLabel}>REST</Text>
+          <Text style={s.restLabel}>REST. THEN GO AGAIN.</Text>
           <Text style={s.restCount}>{formatTime(restCount)}</Text>
           <TouchableOpacity onPress={() => setRestCount(null)} style={s.restSkip}>
             <Text style={s.restSkipTxt}>SKIP →</Text>
@@ -765,13 +766,14 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
           <View style={s.modalOverlay}>
             <ScrollView style={{ width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}>
               <View style={s.completionCard}>
-                <Text style={{ fontSize: 44, marginBottom: 8, fontWeight: '900', color: t.red, fontFamily: t.mono, letterSpacing: -2 }}>//</Text>
-                <Text style={s.completionTitle}>Workout{'\n'}Complete!</Text>
+                <Text style={{ fontSize: 44, marginBottom: 8, fontWeight: '900', color: t.red, fontFamily: 'BarlowCondensed-Black', letterSpacing: -2 }}>//</Text>
+                <Text style={s.completionTitle}>WORK{'\n'}DONE.</Text>
+                <Text style={[s.completionSub, { fontFamily: 'IBMPlexSans-SemiBold', color: t.text, marginBottom: 2 }]}>You showed up and finished it.</Text>
                 <Text style={s.completionSub}>
-                  {formatTime(elapsed)} · {exercises.reduce((a, e) => a + e.sets.filter(s => s.completed).length, 0)} sets · {exercises.length} exercises
+                  {formatTime(elapsed)} · {exercises.reduce((a, e) => a + e.sets.filter(s => s.completed).length, 0)} sets · {exercises.length} movements
                 </Text>
 
-                <Text style={{ fontSize: 10, color: t.textMuted, letterSpacing: 1.5, marginTop: 16, marginBottom: 8 }}>HOW HARD WAS IT?</Text>
+                <Text style={{ fontFamily: 'IBMPlexSans-Bold', fontSize: 10, color: t.textMuted, letterSpacing: 1.2, marginTop: 16, marginBottom: 8, textTransform: 'uppercase' }}>HOW HARD WAS IT?</Text>
                 <View style={s.rpeRow}>
                   {[6, 7, 8, 9, 10].map(r => (
                     <TouchableOpacity key={r} style={[s.rpeChip, rpe === r && s.rpeChipActive]} onPress={() => setRpe(r)}>
@@ -791,7 +793,7 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
                 />
 
                 <TouchableOpacity onPress={handleFinish} style={[s.logBtn, { width: '100%' }]}>
-                  <LinearGradient colors={['#E8432D', '#c73520']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <LinearGradient colors={['#F55139', '#C93C28']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                     <Text style={s.logBtnTxt}>SAVE & FINISH</Text>
                   </LinearGradient>
                 </TouchableOpacity>

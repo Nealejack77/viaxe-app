@@ -10,6 +10,7 @@ import { useTheme, Tokens } from '../context/ThemeContext';
 import { PlusIcon, XIcon } from '../components/Icons';
 import WaterCard from '../components/WaterCard';
 import { useAppStore } from '../store/useAppStore';
+import { notifySessionExpired } from '../lib/session';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -148,11 +149,11 @@ function MacroBar({ label, val, target, color, t }: { label: string; val: number
 
 // ── ConfirmView ───────────────────────────────────────────────────────────────
 
-function ConfirmView({ draft, grams, onGramsChange, meal, onMealChange, macros, saving, onLog, onBack, onClose, s, t }: {
+function ConfirmView({ draft, grams, onGramsChange, meal, onMealChange, macros, saving, error, onLog, onBack, onClose, s, t }: {
   draft: FoodDraft; grams: string; onGramsChange: (g: string) => void;
   meal: Meal; onMealChange: (m: Meal) => void;
   macros: { calories: number; protein: number; carbs: number; fat: number };
-  saving: boolean; onLog: () => void; onBack: () => void; onClose: () => void;
+  saving: boolean; error?: string | null; onLog: () => void; onBack: () => void; onClose: () => void;
   s: ReturnType<typeof makeStyles>; t: Tokens;
 }) {
   return (
@@ -207,7 +208,11 @@ function ConfirmView({ draft, grams, onGramsChange, meal, onMealChange, macros, 
           ))}
         </View>
 
-        <TouchableOpacity style={[s.logBtn, { marginTop: 24 }]} onPress={onLog} disabled={saving}>
+        {error ? (
+          <View style={s.errBanner}><Text style={s.errBannerTxt}>{error}</Text></View>
+        ) : null}
+
+        <TouchableOpacity style={[s.logBtn, { marginTop: error ? 12 : 24 }]} onPress={onLog} disabled={saving}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.logBtnTxt}>LOG FOOD</Text>}
         </TouchableOpacity>
       </View>
@@ -219,23 +224,23 @@ function ConfirmView({ draft, grams, onGramsChange, meal, onMealChange, macros, 
 
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container: { flex: 1, backgroundColor: t.bg },
-  hdr:  { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', padding: 20, paddingBottom: 0 },
-  title: { fontSize: 26, fontWeight: '900', color: t.text, letterSpacing: -0.5 },
-  date:  { fontSize: 12, color: t.textMuted, fontWeight: '600' },
+  hdr:  { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 0 },
+  hero: { fontFamily: 'BarlowCondensed-Black', fontSize: 50, lineHeight: 44, color: t.text, letterSpacing: -0.8, textTransform: 'uppercase', marginTop: 2 },
+  date:  { fontFamily: 'IBMPlexSans-Bold', fontSize: 11, color: t.textSec, letterSpacing: 1.2 },
 
-  calCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, margin: 20, marginBottom: 0, borderRadius: 16, padding: 18 },
-  calVal:   { fontSize: 38, fontWeight: '900', color: t.text, letterSpacing: -1 },
+  calCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: t.surface, marginHorizontal: 20, marginTop: 20, borderRadius: 4, padding: 18 },
+  calVal:   { fontFamily: 'BarlowCondensed-Black', fontSize: 44, lineHeight: 42, color: t.text, letterSpacing: -1 },
   calLabel: { fontSize: 9, fontWeight: '700', color: t.textMuted, letterSpacing: 1.5 },
-  macroCard: { backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, margin: 20, marginBottom: 0, borderRadius: 16, padding: 18 },
+  macroCard: { backgroundColor: t.surface, marginHorizontal: 20, marginTop: 12, borderRadius: 4, padding: 18 },
 
-  mealSection: { margin: 20, marginBottom: 0, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 16, padding: 16 },
+  mealSection: { marginHorizontal: 20, marginTop: 12, backgroundColor: t.surface, borderRadius: 4, padding: 16 },
   mealHdr:  { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  mealTitle: { fontSize: 13, fontWeight: '800', color: t.text },
+  mealTitle: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: t.textSec },
   mealCal:  { fontSize: 11, color: t.textMuted, marginLeft: 8 },
-  addBtn:   { marginLeft: 'auto', width: 28, height: 28, borderRadius: 8, backgroundColor: t.redDim, borderWidth: 1, borderColor: t.redBorder, alignItems: 'center', justifyContent: 'center' },
+  addBtn:   { marginLeft: 'auto', width: 30, height: 30, borderRadius: 3, backgroundColor: t.green, alignItems: 'center', justifyContent: 'center' },
   emptyTxt: { fontSize: 12, color: t.textMuted, fontStyle: 'italic' },
 
-  foodRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: t.border },
+  foodRow:    { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderTopWidth: 1, borderTopColor: t.border },
   foodName:   { fontSize: 13, color: t.text, fontWeight: '600' },
   foodBrand:  { fontSize: 10, color: t.textMuted, marginTop: 1 },
   foodMacros: { fontSize: 11, color: t.textMuted, marginTop: 2 },
@@ -271,8 +276,10 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   msgTxt:   { fontSize: 12, color: t.textMuted, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
   fldLabel: { fontSize: 9, fontWeight: '700', color: t.textMuted, letterSpacing: 1.5, marginBottom: 6, marginTop: 12 },
   fldInput: { backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: t.text },
-  logBtn:    { backgroundColor: t.red, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
-  logBtnTxt: { fontSize: 14, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  logBtn:    { backgroundColor: t.green, borderRadius: 3, paddingVertical: 16, alignItems: 'center' },
+  logBtnTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, color: '#171714', letterSpacing: 1.2, textTransform: 'uppercase' },
+  errBanner:    { backgroundColor: t.redDim, borderColor: t.redBorder, borderWidth: 1, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12 },
+  errBannerTxt: { color: t.red, fontSize: 12.5, fontWeight: '600', textAlign: 'center', lineHeight: 17 },
 
   confirmName:   { fontSize: 20, fontWeight: '900', color: t.text, letterSpacing: -0.3, marginBottom: 4 },
   confirmBrand:  { fontSize: 12, color: t.textMuted, marginBottom: 16 },
@@ -302,6 +309,7 @@ export default function NutritionScreen() {
   const [draftGrams, setDraftGrams] = useState('100');
   const [draftMeal, setDraftMeal]   = useState<Meal>('breakfast');
   const [saving, setSaving]         = useState(false);
+  const [logError, setLogError]     = useState<string | null>(null);
 
   const [searchQ, setSearchQ]               = useState('');
   const [searchResults, setSearchResults]   = useState<ViaxeFood[]>([]);
@@ -350,6 +358,7 @@ export default function NutritionScreen() {
       servingSize: grams, servingUnit: d.servingUnit || 'g', quantity: 1,
     };
     setSaving(true);
+    setLogError(null);
     try {
       const demo = await isDemo();
       if (demo) {
@@ -357,24 +366,38 @@ export default function NutritionScreen() {
         const updated = [...logs, entry];
         setLogs(updated);
         await AsyncStorage.setItem(cacheKey(date), JSON.stringify(updated));
-      } else {
-        const token = await getToken();
-        const res = await fetch(`${BASE}/nutrition`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const entry: FoodLog = { ...payload, id: data.id };
-          const updated = [...logs, entry];
-          setLogs(updated);
-          await AsyncStorage.setItem(cacheKey(date), JSON.stringify(updated));
-        }
+        setSaving(false);
+        closeModal();
+        return;
       }
-    } catch {}
+      const token = await getToken();
+      const res = await fetch(`${BASE}/nutrition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const entry: FoodLog = { ...payload, id: data.id };
+        const updated = [...logs, entry];
+        setLogs(updated);
+        await AsyncStorage.setItem(cacheKey(date), JSON.stringify(updated));
+        setSaving(false);
+        closeModal();
+        return;
+      }
+      // Non-OK response — surface it instead of silently doing nothing, and keep
+      // the sheet open so the entry the user typed isn't lost.
+      if (res.status === 401) {
+        setLogError('Your session has expired — signing you out to log back in.');
+        notifySessionExpired();
+      } else {
+        setLogError(`Couldn't save this food (error ${res.status}). Please try again.`);
+      }
+    } catch {
+      setLogError('No connection — food not saved. Check your internet and try again.');
+    }
     setSaving(false);
-    closeModal();
   }, [logs, date]);
 
   // ── Delete food ───────────────────────────────────────────────────────────────
@@ -416,10 +439,25 @@ export default function NutritionScreen() {
       const token = await getToken();
       const headers: Record<string, string> = {};
       if (token && token !== 'demo') headers.Authorization = `Bearer ${token}`;
-      const res = await fetch(`${BASE}/foods?q=${encodeURIComponent(searchQ.trim())}`, { headers });
-      if (res.ok) {
-        const data = await res.json();
-        const foods: ViaxeFood[] = data.foods || [];
+      const q = encodeURIComponent(searchQ.trim());
+
+      // Primary: Viaxe Food Graph federated search (canonical + legacy, UK-first,
+      // verification-ranked). Returns the same per-100g fields the rows read.
+      let foods: ViaxeFood[] = [];
+      let ok = false;
+      const res = await fetch(`${BASE}/foods?action=fg-search&q=${q}`, { headers });
+      if (res.status === 401) { setSearchMsg('Session expired — sign in again.'); notifySessionExpired(); setSearchLoading(false); return; }
+      if (res.ok) { const data = await res.json(); foods = data.results || []; ok = true; }
+
+      // Fallback: legacy search if the Food Graph is unavailable or empty, so the
+      // screen never regresses versus the previous behaviour.
+      if (!ok || foods.length === 0) {
+        const legacy = await fetch(`${BASE}/foods?q=${q}`, { headers });
+        if (legacy.status === 401) { setSearchMsg('Session expired — sign in again.'); notifySessionExpired(); setSearchLoading(false); return; }
+        if (legacy.ok) { const d = await legacy.json(); const lf = d.foods || []; if (lf.length || !ok) { foods = lf; ok = true; } }
+      }
+
+      if (ok) {
         setSearchResults(foods);
         if (!foods.length) setSearchMsg('No results found. Try "manual" to add a custom food.');
       } else {
@@ -484,7 +522,7 @@ export default function NutritionScreen() {
 
   // ── Modal helpers ─────────────────────────────────────────────────────────────
   const openModal = (meal: Meal) => {
-    setAddMeal(meal); setTab('search'); setDraft(null);
+    setAddMeal(meal); setTab('search'); setDraft(null); setLogError(null);
     setSearchQ(''); setSearchResults([]); setSearchMsg('');
     setManualBarcode(''); setScanMsg(''); setScanned(false); setScanLoading(false);
     setMf({ name: '', brand: '', calories: '', protein: '', carbs: '', fat: '', grams: '100', unit: 'g' });
@@ -531,8 +569,8 @@ export default function NutritionScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         <View style={s.hdr}>
-          <Text style={s.title}>Nutrition</Text>
-          <Text style={s.date}>{new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</Text>
+          <Text style={s.date}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase()}</Text>
+          <Text style={s.hero}>FUEL THE{'\n'}<Text style={{ color: t.green }}>WORK.</Text></Text>
         </View>
 
         <View style={s.calCard}>
@@ -547,16 +585,16 @@ export default function NutritionScreen() {
             </Text>
           </View>
           <View style={{ alignItems: 'center', paddingLeft: 16, borderLeftWidth: 1, borderLeftColor: t.border }}>
-            <Text style={{ fontSize: 28, fontWeight: '900', color: t.text }}>{TARGETS.calories}</Text>
+            <Text style={{ fontFamily: 'BarlowCondensed-Black', fontSize: 32, color: t.text }}>{TARGETS.calories}</Text>
             <Text style={{ fontSize: 9, fontWeight: '700', color: t.textMuted, letterSpacing: 1 }}>TARGET</Text>
           </View>
         </View>
 
         <View style={s.macroCard}>
           <View style={{ gap: 12 }}>
-            <MacroBar label="PROTEIN" val={totals.protein} target={TARGETS.protein} color={t.red}    t={t} />
-            <MacroBar label="CARBS"   val={totals.carbs}   target={TARGETS.carbs}   color={t.purple} t={t} />
-            <MacroBar label="FAT"     val={totals.fat}     target={TARGETS.fat}     color={t.gold}   t={t} />
+            <MacroBar label="PROTEIN" val={totals.protein} target={TARGETS.protein} color={totals.protein >= TARGETS.protein ? t.green : t.text} t={t} />
+            <MacroBar label="CARBS"   val={totals.carbs}   target={TARGETS.carbs}   color={totals.carbs >= TARGETS.carbs ? t.green : t.text} t={t} />
+            <MacroBar label="FAT"     val={totals.fat}     target={TARGETS.fat}     color={totals.fat >= TARGETS.fat ? t.green : t.text} t={t} />
           </View>
         </View>
 
@@ -571,7 +609,7 @@ export default function NutritionScreen() {
                 <Text style={s.mealTitle}>{MEAL_LABELS[meal]}</Text>
                 {mealCal > 0 && <Text style={s.mealCal}>{mealCal} kcal</Text>}
                 <TouchableOpacity style={s.addBtn} onPress={() => openModal(meal)}>
-                  <PlusIcon size={14} color={t.red} strokeWidth={2.5} />
+                  <PlusIcon size={16} color="#171714" strokeWidth={2.8} />
                 </TouchableOpacity>
               </View>
 
@@ -610,6 +648,7 @@ export default function NutritionScreen() {
                   draft={draft} grams={draftGrams} onGramsChange={setDraftGrams}
                   meal={draftMeal} onMealChange={setDraftMeal} macros={confirmMacros}
                   saving={saving}
+                  error={logError}
                   onLog={() => logFood(draft, confirmGrams, draftMeal)}
                   onBack={() => setDraft(null)} onClose={closeModal}
                   s={s} t={t}
@@ -785,8 +824,12 @@ export default function NutritionScreen() {
                           ))}
                         </View>
 
+                        {logError ? (
+                          <View style={[s.errBanner, { marginTop: 16 }]}><Text style={s.errBannerTxt}>{logError}</Text></View>
+                        ) : null}
+
                         <TouchableOpacity
-                          style={[s.logBtn, { marginTop: 20 }, (!mf.name.trim() || !mf.calories) && { opacity: 0.4 }]}
+                          style={[s.logBtn, { marginTop: logError ? 12 : 20 }, (!mf.name.trim() || !mf.calories) && { opacity: 0.4 }]}
                           onPress={submitManual} disabled={!mf.name.trim() || !mf.calories || saving}
                         >
                           {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.logBtnTxt}>LOG FOOD</Text>}

@@ -30,7 +30,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   pSegOn:     { backgroundColor: t.red },
 
   kicker:     { fontSize: 10, fontWeight: '700', letterSpacing: 2.5, color: t.red, marginBottom: 10 },
-  title:      { fontSize: 30, fontWeight: '900', color: t.text, letterSpacing: -0.8, lineHeight: 36, marginBottom: 10 },
+  title:      { fontFamily: 'BarlowCondensed-Black', fontSize: 40, color: t.text, letterSpacing: -0.6, lineHeight: 38, marginBottom: 10, textTransform: 'uppercase' },
   desc:       { fontSize: 14.5, color: t.textSec, lineHeight: 22, marginBottom: 28 },
 
   goalCard:   { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16, backgroundColor: t.glass, borderWidth: 1.5, borderColor: t.glassBorder, marginBottom: 10 },
@@ -39,12 +39,12 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   goalName:   { fontSize: 15, fontWeight: '800', color: t.text, letterSpacing: -0.2 },
   goalDesc:   { fontSize: 12, color: t.textMuted, marginTop: 2 },
 
-  bigInput:   { fontSize: 52, fontWeight: '900', color: t.text, fontFamily: t.mono, textAlign: 'center', paddingVertical: 12 },
+  bigInput:   { fontSize: 52, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', textAlign: 'center', paddingVertical: 12 },
   unit:       { fontSize: 14, fontWeight: '700', color: t.textMuted, textAlign: 'center', letterSpacing: 2 },
 
   whyInput:   { fontSize: 16, color: t.text, lineHeight: 24, minHeight: 120, textAlignVertical: 'top', padding: 18, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, borderRadius: 16 },
 
-  infoCard:   { alignItems: 'center', padding: 28, borderRadius: 20, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, gap: 12 },
+  infoCard:   { alignItems: 'center', padding: 28, borderRadius: 4, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, gap: 12 },
   infoIcon:   { width: 64, height: 64, borderRadius: 32, backgroundColor: t.redDim, borderWidth: 1, borderColor: t.redBorder, alignItems: 'center', justifyContent: 'center' },
   infoTitle:  { fontSize: 18, fontWeight: '900', color: t.text, letterSpacing: -0.3, textAlign: 'center' },
   infoDesc:   { fontSize: 13, color: t.textSec, textAlign: 'center', lineHeight: 20 },
@@ -103,7 +103,7 @@ export default function OnboardingScreen({ onDone }: Props) {
 
   const Cta = ({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) => (
     <TouchableOpacity style={[s.cta, disabled && { opacity: 0.4 }]} onPress={onPress} disabled={disabled} activeOpacity={0.85}>
-      <LinearGradient colors={['#E8432D', '#c73520']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.ctaInner}>
+      <LinearGradient colors={['#F55139', '#C93C28']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.ctaInner}>
         {finishing && step === TOTAL - 1 ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTxt}>{label}</Text>}
       </LinearGradient>
     </TouchableOpacity>

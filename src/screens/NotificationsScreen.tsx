@@ -46,7 +46,7 @@ function timeAgo(iso: string): string {
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container:   { flex: 1, backgroundColor: t.bg },
   header:      { flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: t.border },
-  headerTitle: { flex: 1, fontSize: 17, fontWeight: '800', color: t.text, textAlign: 'center', letterSpacing: -0.3 },
+  headerTitle: { flex: 1, fontFamily: 'BarlowCondensed-Black', fontSize: 22, color: t.text, textAlign: 'center', letterSpacing: 0, textTransform: 'uppercase' },
   closeBtn:    { width: 32, height: 32, borderRadius: 16, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, alignItems: 'center', justifyContent: 'center' },
   markAll:     { fontSize: 11, fontWeight: '700', color: t.red, width: 70 },
 

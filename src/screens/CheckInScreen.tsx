@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore, CheckInDraft } from '../store/useAppStore';
 import { XIcon, CameraIcon, CheckIcon } from '../components/Icons';
+import SectionLabel from '../components/SectionLabel';
 import { RootStackParamList } from '../../App';
 
 type Props = StackScreenProps<RootStackParamList, 'CheckIn'>;
@@ -26,20 +27,20 @@ const SCORES: { key: keyof Pick<CheckInDraft, 'energy' | 'sleep' | 'hunger' | 's
 const makeStyles = (t: Tokens) => StyleSheet.create({
   container:   { flex: 1, backgroundColor: t.bg },
   header:      { flexDirection: 'row', alignItems: 'center', padding: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: t.border },
-  headerTitle: { flex: 1, fontSize: 17, fontWeight: '800', color: t.text, textAlign: 'center', letterSpacing: -0.3 },
+  headerTitle: { flex: 1, fontFamily: 'BarlowCondensed-Black', fontSize: 22, color: t.text, textAlign: 'center', letterSpacing: 0, textTransform: 'uppercase' },
   closeBtn:    { width: 32, height: 32, borderRadius: 16, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder, alignItems: 'center', justifyContent: 'center' },
   scroll:      { padding: 20, paddingBottom: 40 },
 
   sectionLabel:{ fontSize: 9, fontWeight: '700', letterSpacing: 2, color: t.textMuted, marginBottom: 8, marginTop: 18 },
   card:        { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 16, padding: 16 },
 
-  weightInput: { fontSize: 34, fontWeight: '900', color: t.text, fontFamily: t.mono, paddingVertical: 4 },
+  weightInput: { fontSize: 34, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', paddingVertical: 4 },
   weightUnit:  { fontSize: 14, color: t.textMuted, fontWeight: '700' },
 
   scoreRow:    { marginBottom: 14 },
   scoreHead:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
   scoreLabel:  { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: t.textSec },
-  scoreVal:    { fontSize: 12, fontWeight: '800', color: t.red, fontFamily: t.mono },
+  scoreVal:    { fontSize: 12, fontWeight: '800', color: t.red, fontFamily: 'BarlowCondensed-Black' },
   dotRow:      { flexDirection: 'row', gap: 5 },
   dot:         { flex: 1, height: 26, borderRadius: 7, backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder },
   dotOn:       { backgroundColor: t.red, borderColor: t.red },
@@ -58,7 +59,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
 
   doneWrap:    { alignItems: 'center', paddingVertical: 60, gap: 14 },
   doneIcon:    { width: 72, height: 72, borderRadius: 36, backgroundColor: t.redDim, borderWidth: 1, borderColor: t.redBorder, alignItems: 'center', justifyContent: 'center' },
-  doneTitle:   { fontSize: 20, fontWeight: '900', color: t.text, letterSpacing: -0.4 },
+  doneTitle:   { fontFamily: 'BarlowCondensed-Black', fontSize: 30, lineHeight: 30, color: t.text, letterSpacing: -0.4, textTransform: 'uppercase' },
   doneDesc:    { fontSize: 13, color: t.textMuted, textAlign: 'center', lineHeight: 19, paddingHorizontal: 30 },
 
   histRow:     { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 10 },
@@ -189,7 +190,7 @@ export default function CheckInScreen({ navigation }: Props) {
             </View>
 
             {/* Scores */}
-            <Text style={s.sectionLabel}>HOW WAS YOUR WEEK?</Text>
+            <SectionLabel style={{ marginTop: 18, marginBottom: 8 }}>HOW WAS YOUR WEEK?</SectionLabel>
             <View style={s.card}>
               {SCORES.map(sc => (
                 <ScoreRow
@@ -203,7 +204,7 @@ export default function CheckInScreen({ navigation }: Props) {
             </View>
 
             {/* Photos */}
-            <Text style={s.sectionLabel}>PROGRESS PHOTOS (OPTIONAL)</Text>
+            <SectionLabel style={{ marginTop: 18, marginBottom: 8 }}>PROGRESS PHOTOS (OPTIONAL)</SectionLabel>
             <View style={s.photoRow}>
               {PHOTO_SLOTS.map((label, i) => (
                 <TouchableOpacity key={label} style={s.photoSlot} onPress={() => pickPhoto(i)} activeOpacity={0.8}>
@@ -220,7 +221,7 @@ export default function CheckInScreen({ navigation }: Props) {
             </View>
 
             {/* Notes */}
-            <Text style={s.sectionLabel}>NOTES FOR YOUR COACH</Text>
+            <SectionLabel style={{ marginTop: 18, marginBottom: 8 }}>NOTES FOR YOUR COACH</SectionLabel>
             <TextInput
               style={s.notes}
               value={notes}
@@ -237,7 +238,7 @@ export default function CheckInScreen({ navigation }: Props) {
             {/* History */}
             {store.checkIns.length > 0 && (
               <>
-                <Text style={s.sectionLabel}>PREVIOUS CHECK-INS</Text>
+                <SectionLabel style={{ marginTop: 18, marginBottom: 8 }}>PREVIOUS CHECK-INS</SectionLabel>
                 {store.checkIns.slice(0, 8).map(ci => (
                   <View key={ci.id} style={s.histRow}>
                     <Text style={s.histDate}>

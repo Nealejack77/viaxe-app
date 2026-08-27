@@ -4,9 +4,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fontAssets } from './src/theme/grit';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { useAppStore } from './src/store/useAppStore';
+import { setSessionExpiredHandler } from './src/lib/session';
 import TabNavigator from './src/navigation/TabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
 import ProfileSettingsScreen from './src/screens/ProfileSettingsScreen';
@@ -59,9 +62,20 @@ function AuthedApp({ onLogout }: { onLogout: () => void }) {
 function AppInner() {
   const { t } = useTheme();
   const [auth, setAuth] = useState<AuthState>('loading');
+  // Bundled brand fonts (Barlow Condensed + IBM Plex Sans). Gate render until
+  // loaded so the grit type never flashes a system fallback.
+  const [fontsLoaded] = useFonts(fontAssets);
 
   useEffect(() => {
     AsyncStorage.getItem('@viaxe_token').then(tok => setAuth(tok ? 'in' : 'out'));
+  }, []);
+
+  // A rejected (expired/invalidated) session must not keep the app "logged in"
+  // silently 401-ing every request. notifySessionExpired() clears the dead token
+  // and this drops the user back to Login to re-authenticate.
+  useEffect(() => {
+    setSessionExpiredHandler(() => setAuth('out'));
+    return () => setSessionExpiredHandler(null);
   }, []);
 
   const handleLogin = () => setAuth('in');
@@ -81,7 +95,7 @@ function AppInner() {
     setAuth('out');
   };
 
-  if (auth === 'loading') {
+  if (auth === 'loading' || !fontsLoaded) {
     return (
       <View style={{ flex: 1, backgroundColor: t.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={t.red} size="large" />
