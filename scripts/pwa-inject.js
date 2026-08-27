@@ -34,7 +34,13 @@ const headTags = `
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="VIAXE" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />`;
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <style id="viaxe-pwa-bg">
+      /* Fill the whole viewport (incl. the iOS home-indicator safe area) with the
+         app's asphalt ground, so no white shows below the tab bar in standalone. */
+      html, body, #root { background-color: #171714; }
+      body { overscroll-behavior: none; }
+    </style>`;
 
 if (!html.includes('rel="manifest"')) {
   html = html.replace('</head>', headTags + '\n  </head>');
