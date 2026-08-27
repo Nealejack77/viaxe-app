@@ -10,6 +10,7 @@ import { fontAssets } from './src/theme/grit';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { AppStoreProvider, useAppStore } from './src/store/useAppStore';
 import { setSessionExpiredHandler } from './src/lib/session';
+import { adoptSessionFromUrl } from './src/lib/handoff';
 import TabNavigator from './src/navigation/TabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
 import ProfileSettingsScreen from './src/screens/ProfileSettingsScreen';
@@ -67,7 +68,14 @@ function AppInner() {
   const [fontsLoaded] = useFonts(fontAssets);
 
   useEffect(() => {
-    AsyncStorage.getItem('@viaxe_token').then(tok => setAuth(tok ? 'in' : 'out'));
+    // Adopt a cross-origin `#session=` handoff (from the onboarding page on
+    // www.viaxe.co.uk) before deciding auth, so a freshly-onboarded client
+    // lands logged IN rather than back on Login. No-op on native / when absent.
+    (async () => {
+      await adoptSessionFromUrl();
+      const tok = await AsyncStorage.getItem('@viaxe_token');
+      setAuth(tok ? 'in' : 'out');
+    })();
   }, []);
 
   // A rejected (expired/invalidated) session must not keep the app "logged in"
