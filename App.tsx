@@ -8,7 +8,7 @@ import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fontAssets } from './src/theme/grit';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
-import { useAppStore } from './src/store/useAppStore';
+import { AppStoreProvider, useAppStore } from './src/store/useAppStore';
 import { setSessionExpiredHandler } from './src/lib/session';
 import TabNavigator from './src/navigation/TabNavigator';
 import LoginScreen from './src/screens/LoginScreen';
@@ -107,7 +107,11 @@ function AppInner() {
     return <LoginScreen onLogin={handleLogin} />;
   }
 
-  return <AuthedApp onLogout={handleLogout} />;
+  return (
+    <AppStoreProvider>
+      <AuthedApp onLogout={handleLogout} />
+    </AppStoreProvider>
+  );
 }
 
 export default function App() {

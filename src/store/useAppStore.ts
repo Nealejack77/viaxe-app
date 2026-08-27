@@ -1,6 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  createElement,
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useRef,
+  type ReactNode,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { notifySessionExpired } from '../lib/session';
+import { apiFetch } from '../lib/api';
 
 export interface WeightEntry {
   id?: string;
@@ -275,10 +284,20 @@ const DEMO_SEED: AppState = {
 };
 
 const KEY  = '@viaxe_v2';
-const BASE = 'https://www.viaxe.co.uk/api';
-
-export function useAppStore() {
+function useCreateAppStore() {
   const [state, setState] = useState<AppState>(SEED);
+  const stateRef = useRef<AppState>(SEED);
+  const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
+
+  const replaceState = useCallback((next: AppState | ((prev: AppState) => AppState)) => {
+    const resolved = typeof next === 'function' ? next(stateRef.current) : next;
+    stateRef.current = resolved;
+    setState(resolved);
+  }, []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     const load = async () => {
@@ -287,7 +306,7 @@ export function useAppStore() {
 
       // Demo mode — show rich demo data, no API calls
       if ((!token || token === 'demo') && !raw) {
-        setState(DEMO_SEED);
+        replaceState(DEMO_SEED);
         return;
       }
 
@@ -304,19 +323,15 @@ export function useAppStore() {
           };
         } catch {}
       }
-      setState(base);
+      replaceState(base);
 
       if (!token || token === 'demo') return;
 
-      const headers = { Authorization: `Bearer ${token}` };
-
       // ── Load auth profile ───────────────────────────────────────────────
       try {
-        const meRes = await fetch(`${BASE}/auth?action=me`, { headers });
+        const meRes = await apiFetch('/auth?action=me');
         if (meRes.status === 401) {
-          // The stored token is no longer valid — every authed call (macros,
-          // food search/log, messaging) would 401. Clear it and route to Login.
-          await notifySessionExpired();
+          // apiFetch clears the expired session and routes back to Login.
           return;
         }
         if (meRes.ok) {
@@ -343,7 +358,7 @@ export function useAppStore() {
 
       // ── Load extended profile ───────────────────────────────────────────
       try {
-        const profRes = await fetch(`${BASE}/profile`, { headers });
+        const profRes = await apiFetch('/profile');
         if (profRes.ok) {
           const { profile: extProfile } = await profRes.json();
           if (extProfile) {
@@ -364,7 +379,7 @@ export function useAppStore() {
       const currentState = base;
       if (currentState.ptId) {
         try {
-          const dataRes = await fetch(`${BASE}/data?ptId=${currentState.ptId}`, { headers });
+          const dataRes = await apiFetch(`/data?ptId=${encodeURIComponent(currentState.ptId)}`);
           if (dataRes.ok) {
             const ptData = await dataRes.json();
             const roster: any[] = Array.isArray(ptData?.clients) ? ptData.clients : [];
@@ -460,7 +475,7 @@ export function useAppStore() {
       if (currentState.clientId || base.clientId) {
         const cid = base.clientId || currentState.clientId;
         try {
-          const bwRes = await fetch(`${BASE}/bodyweight?clientId=${cid}&limit=100`, { headers });
+          const bwRes = await apiFetch(`/bodyweight?clientId=${encodeURIComponent(String(cid))}&limit=100`);
           if (bwRes.ok) {
             const { entries } = await bwRes.json();
             const weightLog: WeightEntry[] = (entries || []).map((e: any) => ({
@@ -486,7 +501,7 @@ export function useAppStore() {
       const finalClientId = base.clientId;
       if (finalClientId) {
         try {
-          const wRes = await fetch(`${BASE}/workouts?clientId=${finalClientId}&limit=50`, { headers });
+          const wRes = await apiFetch(`/workouts?clientId=${encodeURIComponent(finalClientId)}&limit=50`);
           if (wRes.ok) {
             const { workouts } = await wRes.json();
             const sessions: TrainingSession[] = (workouts || []).map((w: any) => ({
@@ -518,8 +533,8 @@ export function useAppStore() {
       // ── Load notifications + check-ins (fire-and-forget) ────────────────
       try {
         const [nRes, cRes] = await Promise.all([
-          fetch(`${BASE}/notifications?limit=50`, { headers }),
-          fetch(`${BASE}/coach?entity=checkins&limit=50`, { headers }),
+          apiFetch('/notifications?limit=50'),
+          apiFetch('/coach?entity=checkins&limit=50'),
         ]);
         if (nRes.ok) {
           const nData = await nRes.json();
@@ -540,12 +555,18 @@ export function useAppStore() {
     };
 
     load();
-  }, []);
+  }, [replaceState]);
 
-  const persist = useCallback(async (next: AppState) => {
-    setState(next);
-    await AsyncStorage.setItem(KEY, JSON.stringify(next));
-  }, []);
+  const persist = useCallback(async (update: AppState | ((prev: AppState) => AppState)) => {
+    const previous = stateRef.current;
+    const next = typeof update === 'function' ? update(previous) : update;
+    replaceState(next);
+    const write = persistenceQueue.current
+      .catch(() => {})
+      .then(() => AsyncStorage.setItem(KEY, JSON.stringify(next)));
+    persistenceQueue.current = write;
+    await write;
+  }, [replaceState]);
 
   const today = () => new Date().toISOString().split('T')[0];
   const yesterday = () => new Date(Date.now() - 864e5).toISOString().split('T')[0];
@@ -553,47 +574,48 @@ export function useAppStore() {
   const logWeight = useCallback(async (weight: number, notes?: string) => {
     const d = today();
     const newEntry: WeightEntry = { date: d, weight, notes: notes || '' };
-    const newLog = [...state.weightLog.filter(e => e.date !== d), newEntry]
+    const current = stateRef.current;
+    const newLog = [...current.weightLog.filter(e => e.date !== d), newEntry]
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    const next = { ...state, currentWeight: weight, weightLog: newLog };
-    setState(next);
-    await AsyncStorage.setItem(KEY, JSON.stringify(next));
+    await persist(prev => ({ ...prev, currentWeight: weight, weightLog: newLog }));
 
     const token = await AsyncStorage.getItem('@viaxe_token');
     if (!token || token === 'demo') return;
 
     try {
-      const res = await fetch(`${BASE}/bodyweight`, {
+      const res = await apiFetch('/bodyweight', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ weight, date: d, notes: notes || '', ptId: state.ptId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weight, date: d, notes: notes || '', ptId: stateRef.current.ptId }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.id) {
           newEntry.id = data.id;
-          const updatedLog = [...state.weightLog.filter(e => e.date !== d), newEntry]
+          const updatedLog = [...stateRef.current.weightLog.filter(e => e.date !== d), newEntry]
             .sort((a, b) => a.date.localeCompare(b.date));
-          setState(prev => ({ ...prev, weightLog: updatedLog }));
+          replaceState(prev => ({ ...prev, weightLog: updatedLog }));
         }
       }
     } catch {}
-  }, [state]);
+  }, [persist]);
 
   // ── Water tracker (local-first) ─────────────────────────────────────────────
   const logWater = useCallback((ml: number) => {
     const d = today();
-    const cur = state.waterLog[d] || 0;
-    const nextMl = Math.max(0, Math.min(20000, cur + ml)); // clamp: no negative / absurd
-    persist({ ...state, waterLog: { ...state.waterLog, [d]: nextMl } });
-  }, [state, persist]);
+    persist(prev => {
+      const cur = prev.waterLog[d] || 0;
+      const nextMl = Math.max(0, Math.min(20000, cur + ml)); // clamp: no negative / absurd
+      return { ...prev, waterLog: { ...prev.waterLog, [d]: nextMl } };
+    });
+  }, [persist]);
 
   const setWaterGoal = useCallback((ml: number) => {
     const g = Math.round(ml);
     if (isNaN(g)) return;
-    persist({ ...state, waterGoalMl: Math.max(500, Math.min(6000, g)) });
-  }, [state, persist]);
+    persist(prev => ({ ...prev, waterGoalMl: Math.max(500, Math.min(6000, g)) }));
+  }, [persist]);
 
   const saveWorkoutToDB = useCallback(async (
     workoutId: string,
@@ -607,9 +629,9 @@ export function useAppStore() {
     if (!token || token === 'demo') return null;
 
     try {
-      const res = await fetch(`${BASE}/workouts`, {
+      const res = await apiFetch('/workouts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workoutName,
           planId: workoutId,
@@ -617,7 +639,7 @@ export function useAppStore() {
           exercises,
           notes: notes || '',
           rpe: rpe || null,
-          ptId: state.ptId,
+          ptId: stateRef.current.ptId,
           date: today(),
         }),
       });
@@ -627,7 +649,7 @@ export function useAppStore() {
       }
     } catch {}
     return null;
-  }, [state.ptId]);
+  }, []);
 
   const completeSession = useCallback(async (
     workoutId: string,
@@ -639,9 +661,10 @@ export function useAppStore() {
     rpe?: number,
   ) => {
     const d = today();
-    const wasYesterday = state.lastSessionDate === yesterday();
-    const wasToday     = state.lastSessionDate === d;
-    const newStreak    = wasToday ? state.streak : wasYesterday ? state.streak + 1 : 1;
+    const current = stateRef.current;
+    const wasYesterday = current.lastSessionDate === yesterday();
+    const wasToday     = current.lastSessionDate === d;
+    const newStreak    = wasToday ? current.streak : wasYesterday ? current.streak + 1 : 1;
 
     let dbId: string | null = null;
     if (exercises) {
@@ -661,37 +684,47 @@ export function useAppStore() {
       coachFeedback: null,
     };
 
-    persist({
-      ...state,
+    await persist(prev => ({
+      ...prev,
       streak: newStreak,
       lastSessionDate: d,
-      sessions: [session, ...state.sessions],
+      sessions: [session, ...prev.sessions],
       workoutsLoaded: true,
-    });
-  }, [state, persist, saveWorkoutToDB]);
+    }));
+  }, [persist, saveWorkoutToDB]);
 
   const updateName = useCallback((name: string) => {
-    persist({ ...state, userName: name });
-  }, [state, persist]);
+    persist(prev => ({ ...prev, userName: name }));
+  }, [persist]);
 
-  const updateProfile = useCallback(async (profileUpdates: Partial<UserProfile>) => {
-    const next: AppState = {
-      ...state,
-      profile: { ...state.profile, ...profileUpdates },
-    };
-    persist(next);
-
+  const updateProfile = useCallback(async (profileUpdates: Partial<UserProfile> & { name?: string }): Promise<boolean> => {
     const token = await AsyncStorage.getItem('@viaxe_token');
-    if (!token || token === 'demo') return;
+    if (!token || token === 'demo') {
+      await persist(prev => ({
+        ...prev,
+        userName: profileUpdates.name?.trim() || prev.userName,
+        profile: { ...prev.profile, ...profileUpdates },
+      }));
+      return true;
+    }
 
     try {
-      await fetch(`${BASE}/profile`, {
+      const res = await apiFetch('/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileUpdates),
       });
-    } catch {}
-  }, [state, persist]);
+      if (!res.ok) return false;
+      await persist(prev => ({
+        ...prev,
+        userName: profileUpdates.name?.trim() || prev.userName,
+        profile: { ...prev.profile, ...profileUpdates },
+      }));
+      return true;
+    } catch {
+      return false;
+    }
+  }, [persist]);
 
   const readiness: number | null = null;
 
@@ -700,9 +733,7 @@ export function useAppStore() {
     const token = await AsyncStorage.getItem('@viaxe_token');
     if (!token || token === 'demo') return;
     try {
-      const res = await fetch(`${BASE}/notifications?limit=50`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch('/notifications?limit=50');
       if (res.ok) {
         const data = await res.json();
         setState(prev => ({
@@ -725,9 +756,9 @@ export function useAppStore() {
     const token = await AsyncStorage.getItem('@viaxe_token');
     if (!token || token === 'demo') return;
     try {
-      await fetch(`${BASE}/notifications?action=read`, {
+      await apiFetch('/notifications?action=read', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ids ? { ids } : {}),
       });
     } catch {}
@@ -741,9 +772,7 @@ export function useAppStore() {
       return;
     }
     try {
-      const res = await fetch(`${BASE}/coach?entity=checkins&limit=50${withPhotos ? '&full=1' : ''}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/coach?entity=checkins&limit=50${withPhotos ? '&full=1' : ''}`);
       if (res.ok) {
         const data = await res.json();
         setState(prev => ({ ...prev, checkIns: data.checkins || [], checkInsLoaded: true }));
@@ -757,9 +786,9 @@ export function useAppStore() {
     const token = await AsyncStorage.getItem('@viaxe_token');
     if (!token || token === 'demo') return false;
     try {
-      const res = await fetch(`${BASE}/coach?entity=checkins`, {
+      const res = await apiFetch('/coach?entity=checkins', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(draft),
       });
       if (res.ok) {
@@ -773,27 +802,27 @@ export function useAppStore() {
 
   const loadMessages = useCallback(async () => {
     const token = await AsyncStorage.getItem('@viaxe_token');
-    if (!token || token === 'demo' || !state.ptId) return;
+    const ptId = stateRef.current.ptId;
+    if (!token || token === 'demo' || !ptId) return;
     try {
-      const res = await fetch(`${BASE}/messages?withUser=${state.ptId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/messages?withUser=${encodeURIComponent(ptId)}`);
       if (res.ok) {
         const data = await res.json();
         setState(prev => ({ ...prev, messages: data.messages || [], messagesLoaded: true }));
       }
     } catch {}
     setState(prev => ({ ...prev, messagesLoaded: true }));
-  }, [state.ptId]);
+  }, []);
 
   const sendMessage = useCallback(async (text: string): Promise<boolean> => {
     const token = await AsyncStorage.getItem('@viaxe_token');
-    if (!token || token === 'demo' || !state.ptId) return false;
+    const ptId = stateRef.current.ptId;
+    if (!token || token === 'demo' || !ptId) return false;
     try {
-      const res = await fetch(`${BASE}/messages`, {
+      const res = await apiFetch('/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ toUserId: state.ptId, text }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toUserId: ptId, text }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -804,7 +833,7 @@ export function useAppStore() {
       }
     } catch {}
     return false;
-  }, [state.ptId]);
+  }, []);
 
   const todaySession = state.sessions.find(s => s.date === today());
   const caloriesBurned = todaySession ? (todaySession.duration * 8) : 0;
@@ -836,6 +865,21 @@ export function useAppStore() {
     setWaterGoal,
     totalSessions: state.sessions.length,
   };
+}
+
+export type AppStore = ReturnType<typeof useCreateAppStore>;
+
+const AppStoreContext = createContext<AppStore | null>(null);
+
+export function AppStoreProvider({ children }: { children: ReactNode }) {
+  const store = useCreateAppStore();
+  return createElement(AppStoreContext.Provider, { value: store }, children);
+}
+
+export function useAppStore(): AppStore {
+  const store = useContext(AppStoreContext);
+  if (!store) throw new Error('useAppStore must be used within AppStoreProvider');
+  return store;
 }
 
 function computeStreak(sessions: TrainingSession[]): number {

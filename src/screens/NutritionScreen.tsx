@@ -10,7 +10,7 @@ import { useTheme, Tokens } from '../context/ThemeContext';
 import { PlusIcon, XIcon } from '../components/Icons';
 import WaterCard from '../components/WaterCard';
 import { useAppStore } from '../store/useAppStore';
-import { notifySessionExpired } from '../lib/session';
+import { apiFetch, getSessionToken, hasRealSession } from '../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,18 +69,13 @@ interface FoodDraft {
 const MEALS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
 const MEAL_LABELS: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
-const BASE = 'https://www.viaxe.co.uk/api';
 const todayStr = () => new Date().toISOString().split('T')[0];
 const cacheKey = (d: string) => `@viaxe_food_v1_${d}`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function isDemo(): Promise<boolean> {
-  const t = await AsyncStorage.getItem('@viaxe_token');
-  return !t || t === 'demo';
-}
-async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem('@viaxe_token');
+  return !(await hasRealSession());
 }
 
 function viaxeFoodToDraft(f: ViaxeFood): FoodDraft {
@@ -333,8 +328,7 @@ export default function NutritionScreen() {
       if (cached) setLogs(JSON.parse(cached));
 
       if (!demo) {
-        const token = await getToken();
-        const res = await fetch(`${BASE}/nutrition?date=${date}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await apiFetch(`/nutrition?date=${encodeURIComponent(date)}`);
         if (res.ok) {
           const data = await res.json();
           setLogs(data.logs || []);
@@ -370,10 +364,9 @@ export default function NutritionScreen() {
         closeModal();
         return;
       }
-      const token = await getToken();
-      const res = await fetch(`${BASE}/nutrition`, {
+      const res = await apiFetch('/nutrition', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -390,7 +383,6 @@ export default function NutritionScreen() {
       // the sheet open so the entry the user typed isn't lost.
       if (res.status === 401) {
         setLogError('Your session has expired — signing you out to log back in.');
-        notifySessionExpired();
       } else {
         setLogError(`Couldn't save this food (error ${res.status}). Please try again.`);
       }
@@ -402,22 +394,26 @@ export default function NutritionScreen() {
 
   // ── Delete food ───────────────────────────────────────────────────────────────
   const deleteFood = useCallback(async (id: string) => {
+    const demo = await isDemo();
+    if (!demo) {
+      try {
+        const res = await apiFetch(`/nutrition?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!res.ok) return;
+      } catch {
+        return;
+      }
+    }
     const updated = logs.filter(l => l.id !== id);
     setLogs(updated);
     await AsyncStorage.setItem(cacheKey(date), JSON.stringify(updated));
-    const demo = await isDemo();
-    if (!demo) {
-      const token = await getToken();
-      fetch(`${BASE}/nutrition?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-    }
   }, [logs, date]);
 
   // ── Recents: shown before the user types — last week's foods are today's ─────
   const loadRecents = useCallback(async () => {
     try {
-      const token = await getToken();
+      const token = await getSessionToken();
       if (!token || token === 'demo') return;
-      const res = await fetch(`${BASE}/foods?recent=1`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await apiFetch('/foods?recent=1');
       if (res.ok) {
         const data = await res.json();
         const foods: ViaxeFood[] = data.foods || [];
@@ -436,24 +432,21 @@ export default function NutritionScreen() {
     setSearchMsg('');
     setSearchResults([]);
     try {
-      const token = await getToken();
-      const headers: Record<string, string> = {};
-      if (token && token !== 'demo') headers.Authorization = `Bearer ${token}`;
       const q = encodeURIComponent(searchQ.trim());
 
       // Primary: Viaxe Food Graph federated search (canonical + legacy, UK-first,
       // verification-ranked). Returns the same per-100g fields the rows read.
       let foods: ViaxeFood[] = [];
       let ok = false;
-      const res = await fetch(`${BASE}/foods?action=fg-search&q=${q}`, { headers });
-      if (res.status === 401) { setSearchMsg('Session expired — sign in again.'); notifySessionExpired(); setSearchLoading(false); return; }
+      const res = await apiFetch(`/foods?action=fg-search&q=${q}`);
+      if (res.status === 401) { setSearchMsg('Session expired — sign in again.'); setSearchLoading(false); return; }
       if (res.ok) { const data = await res.json(); foods = data.results || []; ok = true; }
 
       // Fallback: legacy search if the Food Graph is unavailable or empty, so the
       // screen never regresses versus the previous behaviour.
       if (!ok || foods.length === 0) {
-        const legacy = await fetch(`${BASE}/foods?q=${q}`, { headers });
-        if (legacy.status === 401) { setSearchMsg('Session expired — sign in again.'); notifySessionExpired(); setSearchLoading(false); return; }
+        const legacy = await apiFetch(`/foods?q=${q}`);
+        if (legacy.status === 401) { setSearchMsg('Session expired — sign in again.'); setSearchLoading(false); return; }
         if (legacy.ok) { const d = await legacy.json(); const lf = d.foods || []; if (lf.length || !ok) { foods = lf; ok = true; } }
       }
 
@@ -475,11 +468,8 @@ export default function NutritionScreen() {
     setScanLoading(true);
     setScanMsg('');
     try {
-      const token = await getToken();
-      const headers: Record<string, string> = {};
-      if (token && token !== 'demo') headers.Authorization = `Bearer ${token}`;
-
-      const internal = await fetch(`${BASE}/foods?barcode=${barcode.trim()}`, { headers });
+      const encodedBarcode = encodeURIComponent(barcode.trim());
+      const internal = await apiFetch(`/foods?barcode=${encodedBarcode}`);
       if (internal.ok) {
         const data = await internal.json();
         if (data.found && data.food) {
@@ -491,7 +481,7 @@ export default function NutritionScreen() {
         }
       }
 
-      const off = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode.trim()}.json`);
+      const off = await apiFetch(`https://world.openfoodfacts.org/api/v0/product/${encodedBarcode}.json`, {}, { auth: false });
       if (off.ok) {
         const data = await off.json();
         if (data.status === 1 && data.product) {

@@ -8,8 +8,7 @@ import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore } from '../store/useAppStore';
 import { VideoIcon } from '../components/Icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BASE = 'https://www.viaxe.co.uk/api';
+import { apiFetch, getSessionToken } from '../lib/api';
 
 interface Message {
   id: string;
@@ -67,13 +66,11 @@ export default function CoachScreen() {
 
   const loadMessages = useCallback(async () => {
     if (!ptId) return;
-    const token = await AsyncStorage.getItem('@viaxe_token');
+    const token = await getSessionToken();
     if (!token || token === 'demo') return;
     setLoading(true);
     try {
-      const res = await fetch(`${BASE}/messages?withUser=${ptId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch(`/messages?withUser=${encodeURIComponent(ptId)}`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
@@ -98,15 +95,15 @@ export default function CoachScreen() {
 
   const sendMessage = async () => {
     if (!input.trim() || sending || !ptId) return;
-    const token = await AsyncStorage.getItem('@viaxe_token');
+    const token = await getSessionToken();
     if (!token || token === 'demo') return;
     const text = input.trim();
     setInput('');
     setSending(true);
     try {
-      const res = await fetch(`${BASE}/messages`, {
+      const res = await apiFetch('/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toUserId: ptId, text }),
       });
       if (res.ok) {

@@ -3,7 +3,6 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   TextInput, Alert, ActivityIndicator, Switch, Modal, KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleDailyWorkoutReminder, cancelDailyWorkoutReminder } from '../lib/notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -12,8 +11,7 @@ import { useAppStore, UserProfile } from '../store/useAppStore';
 import { XIcon } from '../components/Icons';
 import { RootStackParamList } from '../../App';
 import { confirm } from '../utils/confirm';
-
-const API_BASE = 'https://www.viaxe.co.uk/api';
+import { apiFetch } from '../lib/api';
 
 type Props = StackScreenProps<RootStackParamList, 'Profile'> & { onLogout: () => void };
 
@@ -62,6 +60,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   // Save / action buttons
   saveBtn:      { backgroundColor: t.red, borderRadius: 12, marginHorizontal: 20, marginTop: 20, marginBottom: 8, paddingVertical: 15, alignItems: 'center' },
   saveBtnTxt:   { fontSize: 14, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  saveError:    { color: t.red, fontSize: 12.5, lineHeight: 18, textAlign: 'center', marginHorizontal: 20, marginBottom: 8 },
   dangerBtn:    { borderRadius: 12, marginHorizontal: 20, marginBottom: 8, paddingVertical: 15, alignItems: 'center', backgroundColor: t.glass, borderWidth: 1, borderColor: t.glassBorder },
   dangerBtnTxt: { fontSize: 14, fontWeight: '700', color: t.red },
 
@@ -123,6 +122,7 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
   const [availability, setAvailability] = useState(store.profile.trainingAvailability || '');
   const [saving, setSaving]         = useState(false);
   const [saved, setSaved]           = useState(false);
+  const [saveError, setSaveError]   = useState('');
 
   const initials = name.trim()
     ? name.trim().split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -131,7 +131,9 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
   const handleSave = useCallback(async () => {
     setSaving(true);
     setSaved(false);
-    const updates: Partial<UserProfile> = {
+    setSaveError('');
+    const updates: Partial<UserProfile> & { name: string } = {
+      name: name.trim(),
       email,
       phone,
       dob,
@@ -143,11 +145,15 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
       nutritionNotes:       nutrition,
       trainingAvailability: availability,
     };
-    await store.updateProfile(updates);
+    const ok = await store.updateProfile(updates);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [email, phone, dob, gender, heightCm, goalWeight, mainGoal, injuries, nutrition, availability]);
+    if (ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } else {
+      setSaveError('Could not save your changes. Check the details and try again.');
+    }
+  }, [name, email, phone, dob, gender, heightCm, goalWeight, mainGoal, injuries, nutrition, availability]);
 
   const handleLogout = async () => {
     // confirm() works on web (where Alert.alert buttons are a no-op) and native.
@@ -177,10 +183,9 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
     if (newPw !== newPw2) { setPwErr('New passwords do not match.'); return; }
     setPwBusy(true);
     try {
-      const token = await AsyncStorage.getItem('@viaxe_token');
-      const r = await fetch(`${API_BASE}/auth?action=client-change-password`, {
+      const r = await apiFetch('/auth?action=client-change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: curPw, newPassword: newPw }),
       });
       const d = await r.json().catch(() => ({}));
@@ -203,10 +208,9 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
     );
     if (!ok) return;
     try {
-      const token = await AsyncStorage.getItem('@viaxe_token');
-      const r = await fetch(`${API_BASE}/auth?action=delete-account`, {
+      const r = await apiFetch('/auth?action=delete-account', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
@@ -293,6 +297,7 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
             ? <ActivityIndicator color="#fff" />
             : <Text style={s.saveBtnTxt}>{saved ? '✓ SAVED' : 'SAVE CHANGES'}</Text>}
         </TouchableOpacity>
+        {!!saveError && <Text style={s.saveError}>{saveError}</Text>}
 
         {/* Account settings */}
         <View style={s.section}>
