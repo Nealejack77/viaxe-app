@@ -4,7 +4,6 @@ import {
   Modal, TextInput, FlatList, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { WORKOUTS, Workout } from '../data/workouts';
@@ -176,7 +175,7 @@ const makeStyles = (t: Tokens) => StyleSheet.create({
   nextExBtnInner: { padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1, borderColor: t.red, backgroundColor: t.glass },
   nextExBtnTxt: { fontSize: 14, fontWeight: '800', color: t.red, letterSpacing: 1 },
   logBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 4 },
-  logBtnInner: { padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
+  logBtnInner: { padding: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 4 },
   logBtnTxt: { fontSize: 14, fontWeight: '800', color: '#fff', letterSpacing: 1 },
   addExBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.glass, marginBottom: 8 },
   addExTxt: { fontSize: 13, fontWeight: '700', color: t.textSec },
@@ -246,7 +245,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
           {workouts.map((w, i) => (
             <TouchableOpacity key={w.id} onPress={() => onSelect(w)} activeOpacity={0.85} style={s.workoutCard}>
               {i === 0 ? (
-                <LinearGradient colors={['#F55139', '#C93C28']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <View style={{ backgroundColor: t.red, borderRadius: 4 }}>
                   <View style={s.workoutCardInner}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                       <Text style={{ fontSize: 22, fontWeight: '900', color: t.text, fontFamily: 'BarlowCondensed-Black', letterSpacing: -1 }}>//</Text>
@@ -260,7 +259,7 @@ function WorkoutSelector({ workouts, programName, onSelect }: {
                       <Text style={{ fontSize: 12, fontWeight: '800', color: '#fff', letterSpacing: 1 }}>START →</Text>
                     </View>
                   </View>
-                </LinearGradient>
+                </View>
               ) : (
                 <View style={[s.workoutCardInner, { backgroundColor: t.glass }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -405,9 +404,9 @@ function AddExerciseModal({ visible, onClose, onAdd }: {
                   </View>
                 </View>
                 <TouchableOpacity onPress={handleAdd}>
-                  <LinearGradient colors={['#F55139', '#C93C28']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <View style={[s.logBtnInner, { backgroundColor: t.red }]}>
                     <Text style={s.logBtnTxt}>ADD TO WORKOUT</Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setSelected(null)} style={{ alignItems: 'center', paddingVertical: 10 }}>
                   <Text style={{ color: t.textSec, fontSize: 13 }}>← Back to search</Text>
@@ -793,9 +792,9 @@ function ActiveWorkout({ workout, onComplete, onExit }: {
                 />
 
                 <TouchableOpacity onPress={handleFinish} style={[s.logBtn, { width: '100%' }]}>
-                  <LinearGradient colors={['#F55139', '#C93C28']} style={s.logBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  <View style={[s.logBtnInner, { backgroundColor: t.red }]}>
                     <Text style={s.logBtnTxt}>SAVE & FINISH</Text>
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </View>
             </ScrollView>

@@ -41,7 +41,7 @@ export function Bars({
   width = 56,
   height = 22,
   gap = 3,
-  color = '#F55139',
+  color = '#FF4B22',
   dimColor = 'rgba(235,231,217,0.10)',
   activeIndex,
 }: {

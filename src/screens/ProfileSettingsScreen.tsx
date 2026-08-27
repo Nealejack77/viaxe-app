@@ -6,7 +6,7 @@ import {
 import { scheduleDailyWorkoutReminder, cancelDailyWorkoutReminder } from '../lib/notifications';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StackScreenProps } from '@react-navigation/stack';
-import { useTheme, Tokens, ThemeMode } from '../context/ThemeContext';
+import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore, UserProfile } from '../store/useAppStore';
 import { XIcon } from '../components/Icons';
 import { RootStackParamList } from '../../App';
@@ -104,7 +104,7 @@ function FieldRow({
 // ── Main screen ────────────────────────────────────────────────────────────────
 
 export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
-  const { t, mode, setMode } = useTheme();
+  const { t } = useTheme();
   const s = useMemo(() => makeStyles(t), [t]);
   const store = useAppStore();
 
@@ -299,24 +299,9 @@ export default function ProfileSettingsScreen({ navigation, onLogout }: Props) {
         </TouchableOpacity>
         {!!saveError && <Text style={s.saveError}>{saveError}</Text>}
 
-        {/* Account settings */}
-        <View style={s.section}>
-          <SectionLabel label="APPEARANCE" s={s} />
-          <View style={s.card}>
-            <View style={[s.row, { flexDirection: 'column', alignItems: 'flex-start' }]}>
-              <Text style={[s.rowLabel, { marginBottom: 8 }]}>Theme</Text>
-              <View style={s.themePicker}>
-                {(['dark', 'light', 'system'] as ThemeMode[]).map(m => (
-                  <TouchableOpacity key={m} style={[s.themeBtn, mode === m && s.themeBtnOn]} onPress={() => setMode(m)}>
-                    <Text style={[s.themeTxt, mode === m && s.themeTxtOn]}>
-                      {m === 'dark' ? '🌙 Dark' : m === 'light' ? '☀️ Light' : '⚙️ System'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
+        {/* Theme picker removed: the grit identity is a committed dark-only brand
+            (light/system resolved to the same tokens, so the choice was a no-op).
+            Reinstate when genuine, accessible light variants exist. */}
 
         <View style={s.section}>
           <SectionLabel label="ACCOUNT" s={s} />

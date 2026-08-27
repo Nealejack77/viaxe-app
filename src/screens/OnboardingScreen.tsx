@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore } from '../store/useAppStore';
 import { requestNotificationPermission, scheduleDailyWorkoutReminder } from '../lib/notifications';
@@ -103,9 +102,9 @@ export default function OnboardingScreen({ onDone }: Props) {
 
   const Cta = ({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) => (
     <TouchableOpacity style={[s.cta, disabled && { opacity: 0.4 }]} onPress={onPress} disabled={disabled} activeOpacity={0.85}>
-      <LinearGradient colors={['#F55139', '#C93C28']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.ctaInner}>
+      <View style={[s.ctaInner, { backgroundColor: t.red }]}>
         {finishing && step === TOTAL - 1 ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaTxt}>{label}</Text>}
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 

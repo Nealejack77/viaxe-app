@@ -15,7 +15,7 @@ export default function Ring({
   size = 200,
   strokeWidth = 14,
   progress,
-  color = '#F55139',
+  color = '#FF4B22',
   colorEnd,
   trackColor = 'rgba(235,231,217,0.08)',
   duration = 1100,
