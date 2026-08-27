@@ -31,7 +31,12 @@ export default function PressableScale({
   const scale = useRef(new Animated.Value(1)).current;
 
   const spring = (to: number) =>
-    Animated.spring(scale, { toValue: to, useNativeDriver: true, speed: 50, bounciness: 2 }).start();
+    Animated.spring(scale, {
+      toValue: to,
+      useNativeDriver: Platform.OS !== 'web',
+      speed: 50,
+      bounciness: 2,
+    }).start();
 
   const tick = () => {
     if (haptic === 'none' || Platform.OS === 'web') return;

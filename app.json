@@ -15,7 +15,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#1E1F22"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-status-bar"
     ],
     "ios": {
       "supportsTablet": true

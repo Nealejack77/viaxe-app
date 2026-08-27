@@ -32,7 +32,7 @@ export default function Reveal({
         toValue: 1,
         duration: reduced.current ? 0 : duration,
         delay: reduced.current ? 0 : delay,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     const id = setTimeout(() => { if (mounted) run(); }, 0);
     return () => { mounted = false; clearTimeout(id); };
