@@ -11,6 +11,7 @@ import { PlusIcon, XIcon } from '../components/Icons';
 import WaterCard from '../components/WaterCard';
 import { useAppStore } from '../store/useAppStore';
 import { apiFetch, getSessionToken, hasRealSession } from '../lib/api';
+import { localDateKey } from '../lib/date';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ interface FoodDraft {
 const MEALS: Meal[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
 const MEAL_LABELS: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snacks' };
 
-const todayStr = () => new Date().toISOString().split('T')[0];
+const todayStr = () => localDateKey();
 const cacheKey = (d: string) => `@viaxe_food_v1_${d}`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { useAppStore } from '../store/useAppStore';
+import { localDateKey } from '../lib/date';
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => localDateKey();
 
 const makeStyles = (t: Tokens) => StyleSheet.create({
   card: { backgroundColor: t.glass, borderColor: t.glassBorder, borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 16 },

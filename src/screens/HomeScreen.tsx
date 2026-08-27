@@ -10,6 +10,7 @@ import { GritText, Wordmark } from '../components/grit';
 import PressableScale from '../components/motion/PressableScale';
 import AnimatedNumber from '../components/motion/AnimatedNumber';
 import Reveal from '../components/motion/Reveal';
+import { localDateKey } from '../lib/date';
 
 const DAY = 86400000;
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -42,7 +43,7 @@ export default function HomeScreen() {
   const monday = startOfDay(now); monday.setDate(now.getDate() - dow);
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday); d.setDate(monday.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
+    const key = localDateKey(d);
     const done = sessionDates.has(key);
     const isToday = i === dow;
     const future = d.getTime() > today0.getTime();

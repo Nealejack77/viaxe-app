@@ -10,6 +10,7 @@ import {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../lib/api';
+import { localDateKey, addDaysKey, yesterdayKey } from '../lib/date';
 
 export interface WeightEntry {
   id?: string;
@@ -568,8 +569,8 @@ function useCreateAppStore() {
     await write;
   }, [replaceState]);
 
-  const today = () => new Date().toISOString().split('T')[0];
-  const yesterday = () => new Date(Date.now() - 864e5).toISOString().split('T')[0];
+  const today = () => localDateKey();
+  const yesterday = () => yesterdayKey();
 
   const logWeight = useCallback(async (weight: number, notes?: string) => {
     const d = today();
@@ -598,6 +599,24 @@ function useCreateAppStore() {
           replaceState(prev => ({ ...prev, weightLog: updatedLog }));
         }
       }
+    } catch {}
+  }, [persist]);
+
+  const removeWeight = useCallback(async (date: string) => {
+    const current = stateRef.current;
+    const newLog = current.weightLog.filter(e => e.date !== date);
+    // Keep currentWeight pointing at the most recent remaining entry.
+    const latest = [...newLog].sort((a, b) => a.date.localeCompare(b.date)).pop();
+    await persist(prev => ({
+      ...prev,
+      weightLog: newLog,
+      currentWeight: latest ? latest.weight : prev.currentWeight,
+    }));
+
+    const token = await AsyncStorage.getItem('@viaxe_token');
+    if (!token || token === 'demo') return;
+    try {
+      await apiFetch(`/bodyweight?date=${encodeURIComponent(date)}`, { method: 'DELETE' });
     } catch {}
   }, [persist]);
 
@@ -851,6 +870,7 @@ function useCreateAppStore() {
     todayDone: !!todaySession,
     checkInDue,
     logWeight,
+    removeWeight,
     completeSession,
     saveWorkoutToDB,
     updateName,
@@ -884,16 +904,14 @@ export function useAppStore(): AppStore {
 
 function computeStreak(sessions: TrainingSession[]): number {
   if (!sessions.length) return 0;
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateKey();
   const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
   let streak = 0;
   let expected = today;
   for (const date of dates) {
     if (date === expected) {
       streak++;
-      const d = new Date(expected);
-      d.setDate(d.getDate() - 1);
-      expected = d.toISOString().split('T')[0];
+      expected = addDaysKey(expected, -1);
     } else if (date < expected) {
       break;
     }
