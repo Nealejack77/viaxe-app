@@ -1,7 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notifySessionExpired } from './session';
 
-export const API_BASE = 'https://www.viaxe.co.uk/api';
+// EXPO_PUBLIC_* env vars are inlined by Metro at start/build time (no
+// app.config.js needed, standard since Expo SDK 49) — read from a
+// gitignored .env.local (see .gitignore: `.env*.local`) for local testing
+// against a non-production backend. Unset in every real build, so
+// production always gets the hardcoded default below.
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://www.viaxe.co.uk/api';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 

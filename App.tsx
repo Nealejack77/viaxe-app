@@ -17,12 +17,19 @@ import ProfileSettingsScreen from './src/screens/ProfileSettingsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import CheckInScreen from './src/screens/CheckInScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
+import ScheduleScreen from './src/screens/ScheduleScreen';
+import CompleteSessionScreen from './src/screens/CompleteSessionScreen';
+import SessionResultScreen from './src/screens/SessionResultScreen';
+import type { V2Prescription, V2ListItem } from './src/types/sessionV2';
 
 export type RootStackParamList = {
   Tabs: undefined;
   Profile: undefined;
   Notifications: undefined;
   CheckIn: undefined;
+  Schedule: undefined;
+  CompleteSession: { prescription: V2Prescription };
+  SessionResult: { item: V2ListItem; justCompleted?: boolean };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -55,6 +62,9 @@ function AuthedApp({ onLogout }: { onLogout: () => void }) {
         </Stack.Screen>
         <Stack.Screen name="Notifications" options={{ presentation: 'modal' }} component={NotificationsScreen} />
         <Stack.Screen name="CheckIn" options={{ presentation: 'modal' }} component={CheckInScreen} />
+        <Stack.Screen name="Schedule" component={ScheduleScreen} />
+        <Stack.Screen name="CompleteSession" options={{ presentation: 'modal' }} component={CompleteSessionScreen} />
+        <Stack.Screen name="SessionResult" component={SessionResultScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

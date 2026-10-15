@@ -108,6 +108,17 @@ export default function HomeScreen() {
             </PressableScale>
           </Reveal>
 
+          {/* 4b · v2 schedule entry point — coach-assigned sessions, separate
+                 from the legacy programDays flow above it (ARCHITECTURE.md
+                 §8.2 steps 2-4, 10). Additive: the existing hero/Train flow
+                 is untouched. */}
+          <Reveal duration={motion.entrance} delay={motion.stagger}>
+            <PressableScale onPress={() => nav.navigate('Schedule')} haptic="light" accessibilityLabel="View your schedule" style={s.scheduleLink}>
+              <Text style={s.scheduleLinkTxt}>VIEW SCHEDULE</Text>
+              <Text style={s.scheduleLinkArrow}>→</Text>
+            </PressableScale>
+          </Reveal>
+
           {/* 5 · Training week */}
           <Reveal duration={motion.entrance} delay={motion.stagger * 2}>
             <GritText variant="label" style={s.blockLabel}>TRAINING WEEK</GritText>
@@ -185,6 +196,10 @@ const makeStyles = () => StyleSheet.create({
   sessionMeta: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, letterSpacing: 0.6, color: 'rgba(9,9,8,0.75)', marginTop: spacing[2] },
   sessionGo: { width: 52, height: 52, borderRadius: radii.control, backgroundColor: colors.black, alignItems: 'center', justifyContent: 'center' },
   sessionArrow: { fontFamily: 'BarlowCondensed-Black', fontSize: 30, lineHeight: 34, color: colors.chalk },
+
+  scheduleLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.iron, borderRadius: radii.control, paddingVertical: spacing[3], paddingHorizontal: spacing[4], marginBottom: spacing[8] },
+  scheduleLinkTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, letterSpacing: 0.8, color: colors.chalk },
+  scheduleLinkArrow: { fontFamily: 'BarlowCondensed-Black', fontSize: 18, color: colors.acid },
 
   blockLabel: { color: colors.muted, marginBottom: spacing[3] },
 

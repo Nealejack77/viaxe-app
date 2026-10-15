@@ -7,8 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, Tokens } from '../context/ThemeContext';
 import { Wordmark } from '../components/grit';
+import { API_BASE } from '../lib/api';
 
-const API = 'https://www.viaxe.co.uk/api/auth?action=client-login';
+// Was a second hardcoded 'https://www.viaxe.co.uk/api' literal, independent
+// of API_BASE in lib/api.ts — meant EXPO_PUBLIC_API_BASE (added for local
+// testing against a non-production backend) silently had no effect on the
+// one request that matters most: logging in. Now derived from the same
+// constant every other request already uses, so a local override actually
+// reaches login too, and production keeps the exact same default URL either way.
+const API = `${API_BASE}/auth?action=client-login`;
 
 interface Props {
   onLogin: (token?: string, username?: string) => void;
@@ -58,7 +65,7 @@ export default function LoginScreen({ onLogin }: Props) {
     }
     setError('');
     try {
-      await fetch('https://www.viaxe.co.uk/api/auth?action=request-password-reset', {
+      await fetch(`${API_BASE}/auth?action=request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
