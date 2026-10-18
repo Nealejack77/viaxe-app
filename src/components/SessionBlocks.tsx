@@ -3,10 +3,10 @@
 // (recorded actuals) screens so the three read identically.
 
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { colors, spacing, radii } from '../theme/grit';
 import { GritText } from './grit';
-import type { V2Block } from '../types/sessionV2';
+import type { V2Block, V2Set } from '../types/sessionV2';
 
 // field -> [label, unit]. Only fields actually present on a block are shown —
 // never invent a 0 for a measure the block doesn't carry.
@@ -29,6 +29,31 @@ export function blockMeasureFields(block: V2Block): Array<[keyof V2Block, string
   return MEASURES.filter(([key]) => block[key] !== undefined);
 }
 
+function measureLine(block: V2Block): string {
+  const parts = blockMeasureFields(block).map(([key, , unit]) => `${block[key]}${unit}`);
+  // strokeType is categorical, not a MEASURES entry (it has no unit to convert) —
+  // appended as its own token so a swim block still shows it.
+  if (block.strokeType) parts.push(block.strokeType);
+  return parts.join(' · ');
+}
+
+function setSummary(sets: V2Set[]): string {
+  return sets.map((s) => `${s.reps ?? '—'}${s.bodyweight ? ' BW' : s.weightKg != null ? `×${s.weightKg}kg` : ''}`).join(', ');
+}
+
+/** One repeats block's read-only summary: "3 × 8min threshold effort (480s · 224W) + Easy pedalling (240s)". */
+function RepeatsSummary({ block }: { block: V2Block }) {
+  const r = block.repeats!;
+  const workLine = measureLine(r.work);
+  const recoveryLine = r.recovery ? measureLine(r.recovery) : '';
+  return (
+    <Text style={styles.measure}>
+      {r.count} × {r.work.name}{workLine ? ` (${workLine})` : ''}
+      {r.recovery ? ` + ${r.recovery.name}${recoveryLine ? ` (${recoveryLine})` : ''}` : ''}
+    </Text>
+  );
+}
+
 /** Read-only block list — planned targets (Schedule) or recorded actuals (Result). */
 export function SessionBlockList({ blocks }: { blocks: V2Block[] }) {
   return (
@@ -39,14 +64,13 @@ export function SessionBlockList({ blocks }: { blocks: V2Block[] }) {
           <View style={{ flex: 1 }}>
             <GritText variant="bodyStrong" style={styles.name}>{b.name}</GritText>
             {b.sets && b.sets.length > 0 && (
-              <Text style={styles.measure}>
-                {b.sets.map((s) => `${s.reps ?? '—'}${s.bodyweight ? ' BW' : s.weightKg != null ? `×${s.weightKg}kg` : ''}`).join(', ')}
-              </Text>
+              <Text style={styles.measure}>{setSummary(b.sets)}</Text>
             )}
+            {b.repeats && <RepeatsSummary block={b} />}
           </View>
-          <Text style={styles.measure}>
-            {blockMeasureFields(b).map(([key, , unit]) => `${b[key]}${unit}`).join(' · ')}
-          </Text>
+          {!b.repeats && (
+            <Text style={styles.measure}>{measureLine(b)}</Text>
+          )}
         </View>
       ))}
     </View>
@@ -55,13 +79,105 @@ export function SessionBlockList({ blocks }: { blocks: V2Block[] }) {
 
 export interface BlockActuals { [index: number]: Record<string, string> }
 
+/** One editable strength set row: reps, load (kg), and a BODYWEIGHT toggle. */
+function SetEditor({
+  blockIndex, set, i, values, onChange,
+}: {
+  blockIndex: number; set: V2Set; i: number;
+  values: Record<string, string>; onChange: (index: number, field: string, text: string) => void;
+}) {
+  const repsKey = `set${i}.reps`;
+  const weightKey = `set${i}.weightKg`;
+  const bwKey = `set${i}.bodyweight`;
+  const isBodyweight = (values[bwKey] ?? (set.bodyweight ? '1' : '')) === '1';
+  return (
+    <View style={setStyles.row}>
+      <Text style={setStyles.setNum}>Set {set.setNumber}</Text>
+      <View style={setStyles.field}>
+        <Text style={styles.fieldLabel}>Reps</Text>
+        <TextInput
+          value={values[repsKey] ?? (set.reps != null ? String(set.reps) : '')}
+          onChangeText={(t) => onChange(blockIndex, repsKey, t)}
+          keyboardType="numeric"
+          placeholder="—"
+          placeholderTextColor={colors.concrete}
+          style={styles.input}
+        />
+      </View>
+      {isBodyweight ? (
+        <View style={setStyles.field}>
+          <Text style={styles.fieldLabel}>Load (kg)</Text>
+          <View style={[styles.input, setStyles.bwInput]}><Text style={setStyles.bwInputTxt}>Bodyweight</Text></View>
+        </View>
+      ) : (
+        <View style={setStyles.field}>
+          <Text style={styles.fieldLabel}>Load (kg)</Text>
+          <TextInput
+            value={values[weightKey] ?? (set.weightKg != null ? String(set.weightKg) : '')}
+            onChangeText={(t) => onChange(blockIndex, weightKey, t)}
+            keyboardType="numeric"
+            placeholder="—"
+            placeholderTextColor={colors.concrete}
+            style={styles.input}
+          />
+        </View>
+      )}
+      <Pressable
+        onPress={() => onChange(blockIndex, bwKey, isBodyweight ? '' : '1')}
+        accessibilityLabel={`Mark set ${set.setNumber} as bodyweight${isBodyweight ? ', currently on' : ''}`}
+        style={[setStyles.bwToggle, isBodyweight && setStyles.bwToggleOn]}
+      >
+        <Text style={[setStyles.bwToggleTxt, isBodyweight && setStyles.bwToggleTxtOn]}>BW</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Editable work/recovery measures for one repeats block — the repeat COUNT itself is fixed by the prescription, not editable. */
+function RepeatsEditor({
+  block, values, onChange,
+}: {
+  block: V2Block; values: Record<string, string>; onChange: (index: number, field: string, text: string) => void;
+}) {
+  const r = block.repeats!;
+  const renderSide = (side: 'work' | 'recovery', sideBlock: V2Block) => (
+    <View style={repeatStyles.side}>
+      <Text style={repeatStyles.sideLabel}>{sideBlock.name}</Text>
+      <View style={styles.editFields}>
+        {blockMeasureFields(sideBlock).map(([key, label, unit]) => {
+          const fieldKey = `${side}.${String(key)}`;
+          return (
+            <View key={fieldKey} style={styles.field}>
+              <Text style={styles.fieldLabel}>{label} ({unit})</Text>
+              <TextInput
+                value={values[fieldKey] ?? (sideBlock[key] != null ? String(sideBlock[key]) : '')}
+                onChangeText={(t) => onChange(block.index, fieldKey, t)}
+                keyboardType="numeric"
+                placeholder="—"
+                placeholderTextColor={colors.concrete}
+                style={styles.input}
+              />
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+  return (
+    <View style={repeatStyles.container}>
+      <Text style={repeatStyles.count}>× {r.count}</Text>
+      {renderSide('work', r.work)}
+      {r.recovery && renderSide('recovery', r.recovery)}
+    </View>
+  );
+}
+
 /**
- * Editable block list for logging actuals — one numeric field per measure
- * the PLANNED block carries, pre-filled with the planned value (the athlete
- * edits toward what actually happened, rather than typing every field from
- * scratch). Sets, if the block has them, are not individually editable here
- * (MVP) — see the completion screen's notes field for anything that needs
- * more detail than the per-block totals capture.
+ * Editable block list for logging actuals — pre-filled with the planned
+ * value for every measure the PLANNED block carries, including strength
+ * sets (reps / load / an explicit bodyweight toggle, never invented from an
+ * absent load) and the work/recovery sides of a repeats block. A measure
+ * the PLANNED block never had is never invented here.
  */
 export function SessionBlockEditor({
   blocks, values, onChange,
@@ -72,32 +188,48 @@ export function SessionBlockEditor({
 }) {
   return (
     <View style={styles.list}>
-      {blocks.map((b) => (
-        <View key={b.index} style={styles.editRow}>
-          <View style={styles.editHead}>
-            <Text style={styles.kind}>{b.kind}</Text>
-            <GritText variant="bodyStrong" style={styles.name}>{b.name}</GritText>
-          </View>
-          <View style={styles.editFields}>
-            {blockMeasureFields(b).map(([key, label, unit]) => (
-              <View key={String(key)} style={styles.field}>
-                <Text style={styles.fieldLabel}>{label} ({unit})</Text>
-                <TextInput
-                  value={values[b.index]?.[String(key)] ?? (b[key] != null ? String(b[key]) : '')}
-                  onChangeText={(t) => onChange(b.index, String(key), t)}
-                  keyboardType="numeric"
-                  placeholder="—"
-                  placeholderTextColor={colors.concrete}
-                  style={styles.input}
-                />
+      {blocks.map((b) => {
+        const blockValues = values[b.index] || {};
+        return (
+          <View key={b.index} style={styles.editRow}>
+            <View style={styles.editHead}>
+              <Text style={styles.kind}>{b.kind}</Text>
+              <GritText variant="bodyStrong" style={styles.name}>{b.name}</GritText>
+            </View>
+
+            {b.sets && b.sets.length > 0 && (
+              <View style={{ gap: spacing[2] }}>
+                {b.sets.map((s, i) => (
+                  <SetEditor key={s.setNumber} blockIndex={b.index} set={s} i={i} values={blockValues} onChange={onChange} />
+                ))}
               </View>
-            ))}
-            {blockMeasureFields(b).length === 0 && (
-              <Text style={styles.noMeasures}>No numeric targets on this block — mark it done when complete.</Text>
+            )}
+
+            {b.repeats && <RepeatsEditor block={b} values={blockValues} onChange={onChange} />}
+
+            {!b.sets && !b.repeats && (
+              <View style={styles.editFields}>
+                {blockMeasureFields(b).map(([key, label, unit]) => (
+                  <View key={String(key)} style={styles.field}>
+                    <Text style={styles.fieldLabel}>{label} ({unit})</Text>
+                    <TextInput
+                      value={blockValues[String(key)] ?? (b[key] != null ? String(b[key]) : '')}
+                      onChangeText={(t) => onChange(b.index, String(key), t)}
+                      keyboardType="numeric"
+                      placeholder="—"
+                      placeholderTextColor={colors.concrete}
+                      style={styles.input}
+                    />
+                  </View>
+                ))}
+                {blockMeasureFields(b).length === 0 && (
+                  <Text style={styles.noMeasures}>No numeric targets on this block — mark it done when complete.</Text>
+                )}
+              </View>
             )}
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -120,4 +252,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[2], paddingVertical: 8, minWidth: 90,
   },
   noMeasures: { color: colors.concrete, fontFamily: 'IBMPlexSans-Regular', fontSize: 12, fontStyle: 'italic' },
+});
+
+const setStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2] },
+  setNum: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, color: colors.concrete, width: 46, marginBottom: 10 },
+  field: { minWidth: 86 },
+  bwInput: { alignItems: 'center', justifyContent: 'center' },
+  bwInputTxt: { fontFamily: 'IBMPlexSans-SemiBold', fontSize: 12, color: colors.acid },
+  bwToggle: {
+    borderWidth: 1, borderColor: colors.line, borderRadius: radii.sharp,
+    paddingHorizontal: 10, paddingVertical: 9, marginBottom: 1,
+  },
+  bwToggleOn: { backgroundColor: 'rgba(215,255,69,0.14)', borderColor: colors.acid },
+  bwToggleTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 11, color: colors.concrete, letterSpacing: 0.4 },
+  bwToggleTxtOn: { color: colors.acid },
+});
+
+const repeatStyles = StyleSheet.create({
+  container: { gap: spacing[2] },
+  count: { fontFamily: 'IBMPlexSans-Bold', fontSize: 13, color: colors.acid },
+  side: { gap: spacing[1] },
+  sideLabel: { fontFamily: 'IBMPlexSans-SemiBold', fontSize: 12, color: colors.chalk },
 });

@@ -13,9 +13,59 @@ import PressableScale from '../components/motion/PressableScale';
 import { SessionBlockEditor, BlockActuals } from '../components/SessionBlocks';
 import { completeV2Session } from '../lib/scheduleV2';
 import { localDateKey } from '../lib/date';
-import type { V2Block, V2Prescription } from '../types/sessionV2';
+import type { V2Block, V2Prescription, V2Set } from '../types/sessionV2';
 
-const NON_MEASURE_KEYS = new Set(['index', 'kind', 'modality', 'name', 'notes', 'sets', 'repeats']);
+// strokeType is categorical (a string enum), not a NUMBER()-coercible
+// measure — it must never go through resolveMeasure, which would silently
+// drop it the moment it's left untouched ("freestyle" is not Number.isFinite).
+// There is no UI to edit it yet, so it is always carried through unedited.
+const NON_MEASURE_KEYS = new Set(['index', 'kind', 'modality', 'name', 'notes', 'sets', 'repeats', 'strokeType']);
+
+/** One measure field, edited-or-planned-or-cleared — the same rule everywhere. */
+function resolveMeasure(raw: string | undefined, planned: number | null | undefined): number | null | undefined {
+  if (raw === '') return undefined;                      // explicitly cleared -> omit (not measured)
+  const n = raw !== undefined ? Number(raw) : planned;    // edited or fall back to planned
+  return (n === null || Number.isFinite(n)) ? n : undefined;
+}
+
+function carryStrokeType(block: V2Block, planned: V2Block) {
+  if (planned.strokeType !== undefined) block.strokeType = planned.strokeType;
+}
+
+/**
+ * Strength sets: reps, load, and an explicit bodyweight toggle — never an
+ * inferred bodyweight from an absent load. SessionBlockEditor's SetEditor
+ * writes `set{i}.reps` / `set{i}.weightKg` / `set{i}.bodyweight` ('1' | '').
+ */
+function buildActualSets(plannedSets: V2Set[], edited: Record<string, string>): V2Set[] {
+  return plannedSets.map((s, i) => {
+    const bwRaw = edited[`set${i}.bodyweight`];
+    const bodyweight = bwRaw !== undefined ? bwRaw === '1' : !!s.bodyweight;
+    const reps = resolveMeasure(edited[`set${i}.reps`], s.reps);
+    const out: V2Set = { setNumber: s.setNumber, reps: reps === undefined ? null : reps };
+    if (bodyweight) {
+      out.bodyweight = true;
+      out.weightKg = 0;   // the schema's explicit flag for "no external load" — never left unmeasured
+    } else {
+      const weightKg = resolveMeasure(edited[`set${i}.weightKg`], s.weightKg);
+      if (weightKg !== undefined) out.weightKg = weightKg;
+    }
+    if (s.rpe !== undefined) out.rpe = s.rpe;   // no RPE input yet — carried through unedited
+    return out;
+  });
+}
+
+/** One side (work or recovery) of a repeats block, edited the same way a plain block is. */
+function buildActualSide(planned: V2Block, edited: Record<string, string>, prefix: string): V2Block {
+  const block: V2Block = { index: planned.index, kind: planned.kind, modality: planned.modality, name: planned.name };
+  carryStrokeType(block, planned);
+  for (const key of Object.keys(planned)) {
+    if (NON_MEASURE_KEYS.has(key) || (planned as any)[key] === undefined) continue;
+    const n = resolveMeasure(edited[`${prefix}.${key}`], (planned as any)[key]);
+    if (n !== undefined) (block as any)[key] = n;
+  }
+  return block;
+}
 
 /**
  * Merge the athlete's edited values onto the planned block shape. For each
@@ -25,20 +75,27 @@ const NON_MEASURE_KEYS = new Set(['index', 'kind', 'modality', 'name', 'notes', 
  *   - never touched       -> the PLANNED value is kept as the starting
  *     actual (SessionBlockEditor pre-fills the input with it, so this is
  *     what the athlete implicitly confirmed by not changing it)
- * A measure the PLANNED block never had is never invented here.
+ * A measure the PLANNED block never had is never invented here. Strength
+ * sets and a repeats block's work/recovery sides get the same treatment,
+ * one level down.
  */
 function buildActualBlocks(planned: V2Block[], actuals: BlockActuals): V2Block[] {
   return planned.map((b) => {
     const edited = actuals[b.index] || {};
     const block: V2Block = { index: b.index, kind: b.kind, modality: b.modality, name: b.name };
-    if (b.sets) block.sets = b.sets;   // MVP: sets carried through unedited
+    carryStrokeType(block, b);
+
+    if (b.sets) block.sets = buildActualSets(b.sets, edited);
+    if (b.repeats) {
+      const repeats: V2Block['repeats'] = { count: b.repeats.count, work: buildActualSide(b.repeats.work, edited, 'work') };
+      if (b.repeats.recovery) repeats.recovery = buildActualSide(b.repeats.recovery, edited, 'recovery');
+      block.repeats = repeats;
+    }
 
     for (const key of Object.keys(b)) {
       if (NON_MEASURE_KEYS.has(key) || (b as any)[key] === undefined) continue;
-      const raw = edited[key];
-      if (raw === '') continue;                                    // explicitly cleared
-      const n = raw !== undefined ? Number(raw) : (b as any)[key];  // edited or fall back to planned
-      if (n === null || Number.isFinite(n)) (block as any)[key] = n;
+      const n = resolveMeasure(edited[key], (b as any)[key]);
+      if (n !== undefined) (block as any)[key] = n;
     }
     return block;
   });
