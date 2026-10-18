@@ -1,8 +1,13 @@
 // VIAXE — client for the v2 session endpoints (viaxe-os ARCHITECTURE.md
 // §8.2 steps 2-4, 10). Thin wrappers over apiFetch; the server validates and
-// authorises everything, these functions just shape the request and degrade
-// to an empty/null result on a non-OK response rather than throwing, so a
-// screen can render an honest empty state instead of crashing.
+// authorises everything, these functions just shape the request. Two
+// behaviours on a non-OK response, by what the caller needs to tell apart:
+// fetchMyUpcoming/fetchV2Sessions THROW — a real empty list (200, "nothing
+// scheduled") and a failed request (500, network error) must stay
+// distinguishable so a screen can show a genuine empty state for one and a
+// load error with retry for the other. fetchPrescription/fetchV2SessionById/
+// completeV2Session still degrade to null/a typed failure — their callers
+// (CompleteSessionScreen, SessionResultScreen) already branch on that shape.
 
 import { apiFetch } from './api';
 import type { V2Prescription, V2ListItem, V2Result, V2PrescriptionRef } from '../types/sessionV2';
@@ -17,6 +22,12 @@ export interface MyUpcomingResult {
  * The athlete's own assigned plan items — bounded, "upcoming" (today or
  * later, or unscheduled) by default. Requires an athlete (client) session;
  * the server 400s a coach session calling this (coach.js?scope=mine).
+ *
+ * Throws on a non-OK response — a real empty schedule (200, `prescriptions:
+ * []`) and a failed request (500, network error) must stay distinguishable
+ * to the caller, so ScheduleScreen can show "Nothing scheduled" for the
+ * former and a load error with retry for the latter, instead of both
+ * silently collapsing into the same empty list.
  */
 export async function fetchMyUpcoming(
   opts: { limit?: number; includePast?: boolean } = {},
@@ -26,7 +37,7 @@ export async function fetchMyUpcoming(
   if (opts.includePast) params.set('includePast', 'true');
 
   const res = await apiFetch(`/coach?${params.toString()}`);
-  if (!res.ok) return { prescriptions: [], limit: opts.limit ?? 20, includePast: !!opts.includePast };
+  if (!res.ok) throw new Error(`fetchMyUpcoming failed: ${res.status}`);
   const data = await res.json();
   return { prescriptions: data.prescriptions || [], limit: data.limit, includePast: data.includePast };
 }
@@ -56,6 +67,9 @@ export interface V2SessionsPage {
  * history already relies on — a legacy record's uncertainty flags (e.g.
  * missing prescription link, unverified weight unit) come through exactly
  * as the adapter produced them, never hidden or smoothed over.
+ *
+ * Throws on a non-OK response — see fetchMyUpcoming's doc comment for why:
+ * a real empty history must stay distinguishable from a failed request.
  */
 export async function fetchV2Sessions(
   clientId: string, opts: { limit?: number; before?: string; beforeNative?: string } = {},
@@ -66,7 +80,7 @@ export async function fetchV2Sessions(
   if (opts.beforeNative) params.set('beforeNative', opts.beforeNative);
 
   const res = await apiFetch(`/workouts?${params.toString()}`);
-  if (!res.ok) return { items: [], nextCursor: null, nextCursorNative: null };
+  if (!res.ok) throw new Error(`fetchV2Sessions failed: ${res.status}`);
   const data = await res.json();
   return { items: data.items || [], nextCursor: data.nextCursor ?? null, nextCursorNative: data.nextCursorNative ?? null };
 }

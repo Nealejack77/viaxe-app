@@ -27,21 +27,32 @@ export default function ScheduleScreen() {
   const [upcoming, setUpcoming] = useState<V2Prescription[] | null>(null);
   const [recent, setRecent] = useState<V2ListItem[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // undefined = not yet checked; null = last load succeeded; a string = the
+  // last load failed and this is what to show. Kept separate from
+  // upcoming/recent (which only ever hold real data or null-while-loading)
+  // so a failed fetch can never be confused with a genuine empty schedule —
+  // the two render completely differently below.
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [up, hist] = await Promise.all([
-      fetchMyUpcoming({ limit: 20 }),
-      store.clientId ? fetchV2Sessions(store.clientId, { limit: 20 }) : Promise.resolve({ items: [], nextCursor: null, nextCursorNative: null }),
-    ]);
-    setUpcoming(up.prescriptions);
-    setRecent(hist.items);
+    setError(null);
+    try {
+      const [up, hist] = await Promise.all([
+        fetchMyUpcoming({ limit: 20 }),
+        store.clientId ? fetchV2Sessions(store.clientId, { limit: 20 }) : Promise.resolve({ items: [], nextCursor: null, nextCursorNative: null }),
+      ]);
+      setUpcoming(up.prescriptions);
+      setRecent(hist.items);
+    } catch (e) {
+      setError('Could not load your schedule. Check your connection and try again.');
+    }
   }, [store.clientId]);
 
   useEffect(() => { load(); }, [load]);
 
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
-  const loading = upcoming === null || recent === null;
+  const loading = upcoming === null && recent === null && !error;
 
   return (
     <View style={styles.container}>
@@ -56,6 +67,13 @@ export default function ScheduleScreen() {
 
         {loading ? (
           <View style={styles.center}><ActivityIndicator color={colors.ember} size="large" /></View>
+        ) : error ? (
+          <View style={styles.center}>
+            <Text style={styles.errorTxt}>{error}</Text>
+            <PressableScale onPress={load} haptic="light" accessibilityLabel="Retry loading your schedule" style={styles.retryBtn}>
+              <Text style={styles.retryBtnTxt}>RETRY</Text>
+            </PressableScale>
+          </View>
         ) : (
           <ScrollView
             contentContainerStyle={styles.scroll}
@@ -150,7 +168,10 @@ const styles = StyleSheet.create({
   backBtn: { width: 38, height: 38, borderRadius: radii.control, backgroundColor: colors.iron, alignItems: 'center', justifyContent: 'center' },
   backArrow: { fontFamily: 'BarlowCondensed-Black', fontSize: 20, color: colors.chalk },
   headerTitle: { color: colors.chalk },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing[6] },
+  errorTxt: { ...T.body, color: colors.concrete, textAlign: 'center', marginBottom: spacing[4] },
+  retryBtn: { backgroundColor: colors.ember, borderRadius: radii.round, paddingHorizontal: spacing[6], paddingVertical: spacing[3] },
+  retryBtnTxt: { fontFamily: 'IBMPlexSans-Bold', fontSize: 13, color: colors.chalk, letterSpacing: 0.6 },
   scroll: { paddingHorizontal: spacing[5], paddingBottom: spacing[10] },
   sectionLabel: { color: colors.muted, marginBottom: spacing[3] },
   empty: { backgroundColor: colors.iron, borderRadius: radii.card, padding: spacing[5], marginBottom: spacing[3] },
