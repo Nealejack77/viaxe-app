@@ -40,3 +40,6 @@ yarn-error.*
 /ios
 /android
 .vercel
+
+# Screenshots from test/browser/*.js verification runs — reproducible, not committed
+.tmp/

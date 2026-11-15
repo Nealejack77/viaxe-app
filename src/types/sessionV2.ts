@@ -15,6 +15,11 @@ export type V2ResultStatus = 'completed' | 'partial' | 'skipped';
 export interface V2Set {
   setNumber: number;
   reps: number | null;
+  // A prescribed RANGE ("6-8 reps") — prescription-only, mutually exclusive
+  // with `reps` (server sets reps:null when these are present). Added for
+  // viaxe-os's legacy-conversion work; never present on a result.
+  repsMin?: number;
+  repsMax?: number;
   weightKg?: number | null;
   bodyweight?: boolean;
   rpe?: number | null;

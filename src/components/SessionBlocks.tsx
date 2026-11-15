@@ -37,8 +37,18 @@ function measureLine(block: V2Block): string {
   return parts.join(' · ');
 }
 
+function repsLabel(s: V2Set): string {
+  if (s.reps != null) return String(s.reps);
+  // A prescribed RANGE ("6-8 reps") — reps is null, the target lives in
+  // repsMin/repsMax instead. Showing "—" here (the old behaviour) silently
+  // hid the actual prescription from the athlete, so a range-prescribed
+  // exercise always looked unrecorded instead of showing its real target.
+  if (s.repsMin != null && s.repsMax != null) return `${s.repsMin}–${s.repsMax}`;
+  return '—';
+}
+
 function setSummary(sets: V2Set[]): string {
-  return sets.map((s) => `${s.reps ?? '—'}${s.bodyweight ? ' BW' : s.weightKg != null ? `×${s.weightKg}kg` : ''}`).join(', ');
+  return sets.map((s) => `${repsLabel(s)}${s.bodyweight ? ' BW' : s.weightKg != null ? `×${s.weightKg}kg` : ''}`).join(', ');
 }
 
 /** One repeats block's read-only summary: "3 × 8min threshold effort (480s · 224W) + Easy pedalling (240s)". */
@@ -90,6 +100,12 @@ function SetEditor({
   const weightKey = `set${i}.weightKg`;
   const bwKey = `set${i}.bodyweight`;
   const isBodyweight = (values[bwKey] ?? (set.bodyweight ? '1' : '')) === '1';
+  // A range-prescribed set (reps null, repsMin/repsMax set) has nothing to
+  // pre-fill — the athlete logs a specific number they actually did — but
+  // the input must still show the TARGET as a placeholder, or the athlete
+  // has no idea what they were asked to aim for while completing it.
+  const repsPlaceholder = set.reps == null && set.repsMin != null && set.repsMax != null
+    ? `${set.repsMin}–${set.repsMax}` : '—';
   return (
     <View style={setStyles.row}>
       <Text style={setStyles.setNum}>Set {set.setNumber}</Text>
@@ -99,7 +115,7 @@ function SetEditor({
           value={values[repsKey] ?? (set.reps != null ? String(set.reps) : '')}
           onChangeText={(t) => onChange(blockIndex, repsKey, t)}
           keyboardType="numeric"
-          placeholder="—"
+          placeholder={repsPlaceholder}
           placeholderTextColor={colors.concrete}
           style={styles.input}
         />
