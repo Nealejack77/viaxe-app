@@ -20,6 +20,13 @@ export interface V2Set {
   // viaxe-os's legacy-conversion work; never present on a result.
   repsMin?: number;
   repsMax?: number;
+  // A set measured by time or distance instead of a rep count ("45s plank",
+  // "40m farmer's carry") — mutually exclusive with reps/repsMin/repsMax;
+  // `reps` is null on these. "Each side" (perSide) is an orthogonal
+  // modifier of whatever measure the set uses, not a measure itself.
+  durationSec?: number | null;
+  distanceM?: number | null;
+  perSide?: boolean;
   weightKg?: number | null;
   bodyweight?: boolean;
   rpe?: number | null;

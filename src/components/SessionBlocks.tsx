@@ -37,18 +37,49 @@ function measureLine(block: V2Block): string {
   return parts.join(' · ');
 }
 
+// Below 60s as "Ns", otherwise "Mmin" or "Mmin Ss" — a set-level duration
+// read at a glance, distinct from blockMeasureFields' "durationSec" block
+// list (which uses the raw unit) since set rows are terser by design.
+function formatSetDuration(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  const m = Math.floor(sec / 60);
+  const r = sec % 60;
+  return r > 0 ? `${m}min ${r}s` : `${m}min`;
+}
+
 function repsLabel(s: V2Set): string {
-  if (s.reps != null) return String(s.reps);
+  // A set measured by time or distance instead of a rep count ("45s plank",
+  // "40m farmer's carry") — reps is null on these; showing "—" (the old
+  // behaviour for anything other than a plain reps count) silently hid the
+  // real prescribed/performed measure.
+  let base: string;
+  if (s.durationSec != null) base = formatSetDuration(s.durationSec);
+  else if (s.distanceM != null) base = `${s.distanceM}m`;
+  else if (s.reps != null) base = String(s.reps);
   // A prescribed RANGE ("6-8 reps") — reps is null, the target lives in
   // repsMin/repsMax instead. Showing "—" here (the old behaviour) silently
   // hid the actual prescription from the athlete, so a range-prescribed
   // exercise always looked unrecorded instead of showing its real target.
-  if (s.repsMin != null && s.repsMax != null) return `${s.repsMin}–${s.repsMax}`;
-  return '—';
+  else if (s.repsMin != null && s.repsMax != null) base = `${s.repsMin}–${s.repsMax}`;
+  else return '—';
+  return s.perSide ? `${base} each side` : base;
+}
+
+// Weight policy (option B, approved): weightKg null/absent (and not
+// bodyweight) is UNSPECIFIED — never inferred as bodyweight, never shown
+// as blank (which could read as "measured as zero"). An explicit 0, plain
+// bodyweight, and weighted bodyweight each stay their own distinct value.
+function setLoadLabel(s: V2Set): string {
+  // Weighted bodyweight ("BW+10kg" — added load on top of bodyweight) is a
+  // real, distinct prescription from plain bodyweight; collapsing it to
+  // just "BW" silently discarded the added load.
+  if (s.bodyweight) return s.weightKg ? ` BW+${s.weightKg}kg` : ' BW';
+  if (s.weightKg != null) return `×${s.weightKg}kg`;
+  return ' weight not specified';
 }
 
 function setSummary(sets: V2Set[]): string {
-  return sets.map((s) => `${repsLabel(s)}${s.bodyweight ? ' BW' : s.weightKg != null ? `×${s.weightKg}kg` : ''}`).join(', ');
+  return sets.map((s) => `${repsLabel(s)}${setLoadLabel(s)}`).join(', ');
 }
 
 /** One repeats block's read-only summary: "3 × 8min threshold effort (480s · 224W) + Easy pedalling (240s)". */
@@ -97,47 +128,79 @@ function SetEditor({
   values: Record<string, string>; onChange: (index: number, field: string, text: string) => void;
 }) {
   const repsKey = `set${i}.reps`;
+  const durationKey = `set${i}.durationSec`;
+  const distanceKey = `set${i}.distanceM`;
   const weightKey = `set${i}.weightKg`;
   const bwKey = `set${i}.bodyweight`;
   const isBodyweight = (values[bwKey] ?? (set.bodyweight ? '1' : '')) === '1';
+  // A set is rep-counted, OR timed, OR distance-based — never more than one
+  // (session-schema.js's mutual-exclusivity rule) — so which input renders
+  // here is fixed by the planned set's own shape, never guessed.
+  const isTimed = set.durationSec != null;
+  const isDistance = !isTimed && set.distanceM != null;
   // A range-prescribed set (reps null, repsMin/repsMax set) has nothing to
   // pre-fill — the athlete logs a specific number they actually did — but
   // the input must still show the TARGET as a placeholder, or the athlete
   // has no idea what they were asked to aim for while completing it.
   const repsPlaceholder = set.reps == null && set.repsMin != null && set.repsMax != null
     ? `${set.repsMin}–${set.repsMax}` : '—';
+  const setLabel = set.perSide ? `Set ${set.setNumber} (each side)` : `Set ${set.setNumber}`;
   return (
     <View style={setStyles.row}>
-      <Text style={setStyles.setNum}>Set {set.setNumber}</Text>
-      <View style={setStyles.field}>
-        <Text style={styles.fieldLabel}>Reps</Text>
-        <TextInput
-          value={values[repsKey] ?? (set.reps != null ? String(set.reps) : '')}
-          onChangeText={(t) => onChange(blockIndex, repsKey, t)}
-          keyboardType="numeric"
-          placeholder={repsPlaceholder}
-          placeholderTextColor={colors.concrete}
-          style={styles.input}
-        />
-      </View>
-      {isBodyweight ? (
+      <Text style={setStyles.setNum}>{setLabel}</Text>
+      {isTimed ? (
         <View style={setStyles.field}>
-          <Text style={styles.fieldLabel}>Load (kg)</Text>
-          <View style={[styles.input, setStyles.bwInput]}><Text style={setStyles.bwInputTxt}>Bodyweight</Text></View>
-        </View>
-      ) : (
-        <View style={setStyles.field}>
-          <Text style={styles.fieldLabel}>Load (kg)</Text>
+          <Text style={styles.fieldLabel}>Duration (s)</Text>
           <TextInput
-            value={values[weightKey] ?? (set.weightKg != null ? String(set.weightKg) : '')}
-            onChangeText={(t) => onChange(blockIndex, weightKey, t)}
+            value={values[durationKey] ?? (set.durationSec != null ? String(set.durationSec) : '')}
+            onChangeText={(t) => onChange(blockIndex, durationKey, t)}
             keyboardType="numeric"
             placeholder="—"
             placeholderTextColor={colors.concrete}
             style={styles.input}
           />
         </View>
+      ) : isDistance ? (
+        <View style={setStyles.field}>
+          <Text style={styles.fieldLabel}>Distance (m)</Text>
+          <TextInput
+            value={values[distanceKey] ?? (set.distanceM != null ? String(set.distanceM) : '')}
+            onChangeText={(t) => onChange(blockIndex, distanceKey, t)}
+            keyboardType="numeric"
+            placeholder="—"
+            placeholderTextColor={colors.concrete}
+            style={styles.input}
+          />
+        </View>
+      ) : (
+        <View style={setStyles.field}>
+          <Text style={styles.fieldLabel}>Reps</Text>
+          <TextInput
+            value={values[repsKey] ?? (set.reps != null ? String(set.reps) : '')}
+            onChangeText={(t) => onChange(blockIndex, repsKey, t)}
+            keyboardType="numeric"
+            placeholder={repsPlaceholder}
+            placeholderTextColor={colors.concrete}
+            style={styles.input}
+          />
+        </View>
       )}
+      {/* Bodyweight PLUS an added load ("BW+10kg" weighted pull-ups) is a
+          real prescription, so this input stays visible and editable even
+          with bodyweight on — hiding it behind a static "Bodyweight" label
+          (the old behaviour) gave the athlete no way to see or log that
+          added load at all. */}
+      <View style={setStyles.field}>
+        <Text style={styles.fieldLabel}>{isBodyweight ? 'Added (kg)' : 'Load (kg)'}</Text>
+        <TextInput
+          value={values[weightKey] ?? (set.weightKg != null ? String(set.weightKg) : '')}
+          onChangeText={(t) => onChange(blockIndex, weightKey, t)}
+          keyboardType="numeric"
+          placeholder={set.weightKg == null && !isBodyweight ? 'Not specified' : '—'}
+          placeholderTextColor={colors.concrete}
+          style={styles.input}
+        />
+      </View>
       <Pressable
         onPress={() => onChange(blockIndex, bwKey, isBodyweight ? '' : '1')}
         accessibilityLabel={`Mark set ${set.setNumber} as bodyweight${isBodyweight ? ', currently on' : ''}`}
@@ -272,10 +335,8 @@ const styles = StyleSheet.create({
 
 const setStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing[2] },
-  setNum: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, color: colors.concrete, width: 46, marginBottom: 10 },
+  setNum: { fontFamily: 'IBMPlexSans-Bold', fontSize: 12, color: colors.concrete, width: 46, flexShrink: 1, marginBottom: 10 },
   field: { minWidth: 86 },
-  bwInput: { alignItems: 'center', justifyContent: 'center' },
-  bwInputTxt: { fontFamily: 'IBMPlexSans-SemiBold', fontSize: 12, color: colors.acid },
   bwToggle: {
     borderWidth: 1, borderColor: colors.line, borderRadius: radii.sharp,
     paddingHorizontal: 10, paddingVertical: 9, marginBottom: 1,

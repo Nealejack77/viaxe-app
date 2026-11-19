@@ -33,22 +33,43 @@ function carryStrokeType(block: V2Block, planned: V2Block) {
 }
 
 /**
- * Strength sets: reps, load, and an explicit bodyweight toggle — never an
- * inferred bodyweight from an absent load. SessionBlockEditor's SetEditor
- * writes `set{i}.reps` / `set{i}.weightKg` / `set{i}.bodyweight` ('1' | '').
+ * Strength sets: reps (or a timed/distance measure), load, and an explicit
+ * bodyweight toggle — never an inferred bodyweight from an absent load.
+ * SessionBlockEditor's SetEditor writes `set{i}.reps` / `set{i}.durationSec`
+ * / `set{i}.distanceM` / `set{i}.weightKg` / `set{i}.bodyweight` ('1' | '').
  */
 function buildActualSets(plannedSets: V2Set[], edited: Record<string, string>): V2Set[] {
   return plannedSets.map((s, i) => {
     const bwRaw = edited[`set${i}.bodyweight`];
     const bodyweight = bwRaw !== undefined ? bwRaw === '1' : !!s.bodyweight;
-    const reps = resolveMeasure(edited[`set${i}.reps`], s.reps);
-    const out: V2Set = { setNumber: s.setNumber, reps: reps === undefined ? null : reps };
+    const out: V2Set = { setNumber: s.setNumber, reps: null };
+
+    // A set is rep-counted, OR timed, OR distance-based — never more than
+    // one (session-schema.js's mutual-exclusivity rule). Which measure this
+    // set uses is fixed by the PLANNED set's own shape, never guessed here.
+    if (s.durationSec != null) {
+      const durationSec = resolveMeasure(edited[`set${i}.durationSec`], s.durationSec);
+      if (durationSec !== undefined) out.durationSec = durationSec;
+    } else if (s.distanceM != null) {
+      const distanceM = resolveMeasure(edited[`set${i}.distanceM`], s.distanceM);
+      if (distanceM !== undefined) out.distanceM = distanceM;
+    } else {
+      const reps = resolveMeasure(edited[`set${i}.reps`], s.reps);
+      out.reps = reps === undefined ? null : reps;
+    }
+    if (s.perSide) out.perSide = true;   // an orthogonal modifier, not something the athlete edits per completion
+
+    // Bodyweight PLUS an added load ("BW+10kg" weighted pull-ups) is a real,
+    // distinct prescription — toggling bodyweight on must never zero an
+    // already-planned or athlete-edited load; it only defaults to 0 (the
+    // schema's explicit flag for "no external load") when there genuinely
+    // is none.
+    const weightKg = resolveMeasure(edited[`set${i}.weightKg`], s.weightKg);
     if (bodyweight) {
       out.bodyweight = true;
-      out.weightKg = 0;   // the schema's explicit flag for "no external load" — never left unmeasured
-    } else {
-      const weightKg = resolveMeasure(edited[`set${i}.weightKg`], s.weightKg);
-      if (weightKg !== undefined) out.weightKg = weightKg;
+      out.weightKg = weightKg !== undefined ? weightKg : 0;
+    } else if (weightKg !== undefined) {
+      out.weightKg = weightKg;
     }
     if (s.rpe !== undefined) out.rpe = s.rpe;   // no RPE input yet — carried through unedited
     return out;
