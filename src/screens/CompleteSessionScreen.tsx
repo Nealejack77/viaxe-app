@@ -3,17 +3,24 @@
 // (prescriptionRef), so a later plan edit can never rewrite what this
 // result says happened.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radii, type as T } from '../theme/grit';
 import { GritText, GritButton } from '../components/grit';
 import PressableScale from '../components/motion/PressableScale';
 import { SessionBlockEditor, BlockActuals } from '../components/SessionBlocks';
 import { completeV2Session } from '../lib/scheduleV2';
 import { localDateKey } from '../lib/date';
+import { useAppStore } from '../store/useAppStore';
+import { saveDraft, loadDraft, clearDraft, prescriptionRequestId } from '../lib/sessionDraft';
 import type { V2Block, V2Prescription, V2Set } from '../types/sessionV2';
+
+// Local autosave is cheap (no network round trip) but still debounced so a
+// fast typist doesn't write to AsyncStorage on every keystroke.
+const DRAFT_SAVE_DEBOUNCE_MS = 500;
 
 // strokeType is categorical (a string enum), not a NUMBER()-coercible
 // measure — it must never go through resolveMeasure, which would silently
@@ -126,13 +133,50 @@ export default function CompleteSessionScreen() {
   const nav = useNavigation() as any;
   const route = useRoute() as any;
   const prescription: V2Prescription = route.params.prescription;
+  const { clientId: athleteId } = useAppStore();
+
+  // Deterministic — reconstructible from the prescription's own identity,
+  // nothing needs to be generated or persisted just to survive a restart.
+  // Also doubles as the draft's scope key alongside athleteId, so a draft
+  // never leaks between athletes on a shared device, and a LATER coach
+  // revision (a different rev) never resurrects a stale draft onto
+  // content it was never actually written against.
+  const clientRequestId = prescriptionRequestId(prescription.programmeId, prescription.planItemId, prescription.rev);
 
   const [actuals, setActuals] = useState<BlockActuals>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resumedDraft, setResumedDraft] = useState(false);
+  const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Restore an interrupted workout — only ever for THIS athlete, THIS
+  // programme/plan item, and THIS exact revision (see sessionDraft.ts).
+  useEffect(() => {
+    if (!athleteId) return;
+    let cancelled = false;
+    loadDraft(AsyncStorage, athleteId, prescription.programmeId, prescription.planItemId, prescription.rev).then((draft) => {
+      if (cancelled || !draft) return;
+      setActuals(draft.actuals);
+      setResumedDraft(true);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [athleteId, prescription.programmeId, prescription.planItemId, prescription.rev]);
 
   const onChange = (index: number, field: string, text: string) => {
-    setActuals((prev) => ({ ...prev, [index]: { ...prev[index], [field]: text } }));
+    setActuals((prev) => {
+      const next = { ...prev, [index]: { ...prev[index], [field]: text } };
+      if (athleteId) {
+        if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
+        draftSaveTimer.current = setTimeout(() => {
+          saveDraft(AsyncStorage, {
+            athleteId, programmeId: prescription.programmeId, planItemId: prescription.planItemId, rev: prescription.rev,
+            clientRequestId, actuals: next, savedAt: new Date().toISOString(),
+          });
+        }, DRAFT_SAVE_DEBOUNCE_MS);
+      }
+      return next;
+    });
   };
 
   const onSubmit = async () => {
@@ -147,13 +191,24 @@ export default function CompleteSessionScreen() {
       completedAt: new Date().toISOString(),
       status: 'completed',
       blocks,
+      clientRequestId,
     });
     setSubmitting(false);
 
     if (!result.ok) {
+      if (result.code === 'REQUEST_ID_REUSED') {
+        // This exact session was already completed with DIFFERENT content —
+        // almost always another device finishing it first. The stale local
+        // draft must not keep being resubmitted; it's cleared here rather
+        // than left to resurrect on a future retry.
+        if (athleteId) await clearDraft(AsyncStorage, athleteId, prescription.programmeId, prescription.planItemId, prescription.rev);
+        setError('This session was already completed with different details — check your training history.');
+        return;
+      }
       setError(result.error || 'Could not save this session.');
       return;
     }
+    if (athleteId) await clearDraft(AsyncStorage, athleteId, prescription.programmeId, prescription.planItemId, prescription.rev);
     nav.replace('SessionResult', {
       item: { mappable: true, session: result.session, flags: [], source: { collection: 'sessions_v2', id: result.session!.sessionId } },
       justCompleted: true,
@@ -175,6 +230,11 @@ export default function CompleteSessionScreen() {
           <Text style={styles.sub}>
             {prescription.sport} · {prescription.sessionType} · plan item {prescription.planItemId.slice(0, 12)}… rev {prescription.rev}
           </Text>
+          {resumedDraft && (
+            <View style={styles.resumedBox}>
+              <Text style={styles.resumedTxt}>Resumed your in-progress entry from earlier</Text>
+            </View>
+          )}
           <GritText variant="label" style={styles.sectionLabel}>Log your actuals</GritText>
           <SessionBlockEditor blocks={prescription.blocks} values={actuals} onChange={onChange} />
 
@@ -210,4 +270,6 @@ const styles = StyleSheet.create({
   sectionLabel: { color: colors.muted, marginBottom: spacing[3] },
   errorBox: { backgroundColor: 'rgba(255,75,34,0.12)', borderWidth: 1, borderColor: 'rgba(255,75,34,0.3)', borderRadius: radii.control, padding: spacing[3], marginTop: spacing[4] },
   errorTxt: { color: colors.ember, fontFamily: 'IBMPlexSans-SemiBold', fontSize: 13 },
+  resumedBox: { backgroundColor: 'rgba(79,210,224,0.10)', borderWidth: 1, borderColor: 'rgba(79,210,224,0.25)', borderRadius: radii.control, padding: spacing[3], marginBottom: spacing[4] },
+  resumedTxt: { color: colors.concrete, fontFamily: 'IBMPlexSans-SemiBold', fontSize: 12.5 },
 });

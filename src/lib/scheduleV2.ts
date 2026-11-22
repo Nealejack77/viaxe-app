@@ -102,6 +102,11 @@ export interface CompleteV2SessionInput {
   blocks: unknown[];
   rpe?: number | null;
   notes?: string;
+  // Makes a retry (timeout, flaky connection, double-tap) safe: the server
+  // returns the already-stored result instead of creating a duplicate
+  // session, and refuses outright (409 REQUEST_ID_REUSED) if the same id is
+  // ever resubmitted with materially different content.
+  clientRequestId?: string;
 }
 
 export interface CompleteV2SessionResult {
