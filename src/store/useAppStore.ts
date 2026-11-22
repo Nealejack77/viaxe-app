@@ -12,6 +12,7 @@ import { AppState as RNAppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiFetch } from '../lib/api';
 import { localDateKey, addDaysKey, yesterdayKey } from '../lib/date';
+import { shouldDiscardCachedState } from '../lib/accountIsolation';
 
 export interface WeightEntry {
   id?: string;
@@ -286,6 +287,18 @@ const DEMO_SEED: AppState = {
 };
 
 const KEY  = '@viaxe_v2';
+// The session token the cached blob above was last written under. A fresh
+// login always mints a brand-new, unguessable token (api/_lib/core.js's
+// createSession) — comparing it against the CURRENT token is a reliable,
+// instantly-available-offline signal for "is this still the same athlete's
+// own continued session," with no network round trip needed to decide.
+// Critically, this does NOT depend on an explicit logout ever having run:
+// if the app was simply closed (not logged out) and a DIFFERENT athlete
+// then logs in, their login mints a new token that can never match what's
+// recorded here, so the mismatch is caught before anything cached is ever
+// shown — never "briefly flashes, then corrects."
+const OWNER_TOKEN_KEY = '@viaxe_v2_owner_token';
+
 function useCreateAppStore() {
   const [state, setState] = useState<AppState>(SEED);
   const stateRef = useRef<AppState>(SEED);
@@ -307,7 +320,19 @@ function useCreateAppStore() {
     // back to the cached snapshot first.
     const load = async (isInitial = true) => {
       const token = await AsyncStorage.getItem('@viaxe_token');
-      const raw   = await AsyncStorage.getItem(KEY);
+      let raw   = await AsyncStorage.getItem(KEY);
+      const ownerToken = await AsyncStorage.getItem(OWNER_TOKEN_KEY);
+
+      // The cached blob belongs to a DIFFERENT session than the one
+      // currently authenticated (a new login happened without the previous
+      // one explicitly logging out first) — discard it before anything
+      // derived from it is ever rendered. Cleared from storage too, not
+      // just ignored in memory, so a later load (e.g. after a crash
+      // mid-sync) can't resurrect it.
+      if (shouldDiscardCachedState({ hasCachedBlob: !!raw, currentToken: token, cachedOwnerToken: ownerToken })) {
+        raw = null;
+        await AsyncStorage.removeItem(KEY);
+      }
 
       // Demo mode — show rich demo data, no API calls
       if ((!token || token === 'demo') && !raw) {
@@ -558,8 +583,9 @@ function useCreateAppStore() {
         setState(prev => ({ ...prev, checkInsLoaded: true }));
       }
 
-      // Persist updated state
+      // Persist updated state, tagged with whichever session wrote it.
       await AsyncStorage.setItem(KEY, JSON.stringify(base));
+      if (token && token !== 'demo') await AsyncStorage.setItem(OWNER_TOKEN_KEY, token);
     };
 
     load(true);
@@ -583,7 +609,14 @@ function useCreateAppStore() {
     replaceState(next);
     const write = persistenceQueue.current
       .catch(() => {})
-      .then(() => AsyncStorage.setItem(KEY, JSON.stringify(next)));
+      .then(async () => {
+        await AsyncStorage.setItem(KEY, JSON.stringify(next));
+        // Keep the ownership tag current for the session actually writing
+        // this — covers a demo session never tagging over a real athlete's
+        // cache (or vice versa) just by continuing to use the app.
+        const token = await AsyncStorage.getItem('@viaxe_token');
+        if (token && token !== 'demo') await AsyncStorage.setItem(OWNER_TOKEN_KEY, token);
+      });
     persistenceQueue.current = write;
     await write;
   }, [replaceState]);
