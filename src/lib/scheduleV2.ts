@@ -116,6 +116,22 @@ export interface CompleteV2SessionResult {
   code?: string;
 }
 
+async function postCompletion(input: CompleteV2SessionInput) {
+  const res = await apiFetch('/workouts?entity=sessions-v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { res, data };
+}
+
+/** True only for the exact "server doesn't know this field yet" shape — never a generic validation failure. */
+function isUnrecognisedRequestIdField(data: any): boolean {
+  return data?.code === 'INVALID_RESULT' && Array.isArray(data.errors)
+    && data.errors.some((e: any) => e?.path === 'clientRequestId');
+}
+
 /**
  * Complete a scheduled (or ad-hoc) v2 session. The server derives
  * athleteId/coachId itself and verifies a given prescriptionRef both exists
@@ -123,12 +139,21 @@ export interface CompleteV2SessionResult {
  * cannot bypass either check, it only shapes the request.
  */
 export async function completeV2Session(input: CompleteV2SessionInput): Promise<CompleteV2SessionResult> {
-  const res = await apiFetch('/workouts?entity=sessions-v2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  const data = await res.json().catch(() => ({}));
+  let { res, data } = await postCompletion(input);
+
+  // An OLDER server (deployed before idempotency support, or rolled back to
+  // one) rejects clientRequestId outright as an unknown field — this is the
+  // ONE specific, detectable shape that means "this server doesn't support
+  // it yet," never a genuine validation problem with the submission itself.
+  // Retrying once WITHOUT it keeps completion working (no duplicate
+  // protection against that older server, which is the best available —
+  // it has none either way) instead of failing every single submission
+  // for the whole deployment window.
+  if (!res.ok && isUnrecognisedRequestIdField(data) && input.clientRequestId) {
+    const { clientRequestId, ...withoutRequestId } = input;
+    ({ res, data } = await postCompletion(withoutRequestId));
+  }
+
   if (!res.ok) return { ok: false, error: data.error, code: data.code };
   return { ok: true, session: data.session };
 }

@@ -17,11 +17,26 @@
 //      EXPO_PUBLIC_API_BASE — edit it directly rather than relying on the
 //      shell var, then restart Expo (env vars are inlined at bundle time,
 //      a reload is not enough).
-//   4. One real session seeded for Alice with a future scheduledDate and a
-//      repsMin/repsMax + bodyweight set — see the curl commands in
-//      ../../../viaxe-os's review packet, or construct an equivalent
-//      coach-side POST to entity=programs (create) + entity=plan-items
-//      (create) + entity=programs action=create-instance.
+//   4. One real session seeded for Alice (or another athlete — Bob is a
+//      good choice to keep this independent from session-persistence.js's
+//      Alice fixtures) with a future scheduledDate and a repsMin/repsMax +
+//      bodyweight set, e.g.:
+//        curl -X POST "http://127.0.0.1:4210/api/coach?entity=programs" \
+//          -H "Content-Type: application/json" -H "Authorization: Bearer two-client-coach-token" \
+//          -d '{"action":"create-instance","templateProgrammeId":"prg_twoClientTpl1","clientId":"cli_bob000000001","startDate":"<FAR FUTURE, so it never overlaps Alice's dates>"}'
+//      then add a strength plan item on that instance's programmeId with an
+//      EARLIER future scheduledDate (so it sorts first) and a rep-range +
+//      bodyweight set shape, e.g. blocks: [{ index:0, kind:'work',
+//      modality:'strength', name:'Pull-up', sets:[{ setNumber:1, reps:null,
+//      repsMin:6, repsMax:8, bodyweight:true, weightKg:0 }, ...] }].
+//
+// IMPORTANT — run this in its OWN, fresh Chrome profile/tab if
+// session-persistence.js has already logged in as a different athlete in
+// this browser. Logging in as a new user without an explicit logout first
+// does not clear the legacy useAppStore cache (`@viaxe_v2` — see
+// LoginScreen.tsx, which never clears it; only App.tsx's handleLogout
+// does) — a real, pre-existing gap, not something these tests' own
+// fixtures cause.
 //
 // Usage:  node test/browser/athlete-journey.js
 'use strict';

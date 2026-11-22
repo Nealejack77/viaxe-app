@@ -20,6 +20,17 @@
 //        EXPO_PUBLIC_API_BASE=http://localhost:4210/api CI=1 \
 //          ./node_modules/.bin/expo start --web --port 19010
 //
+// IMPORTANT — run this in its OWN, fresh Chrome profile/tab, never one that
+// has already logged in as a DIFFERENT athlete (e.g. athlete-journey.js's
+// Bob) without an explicit logout in between. Logging in as a new user
+// without first logging out the previous one does not clear the legacy
+// useAppStore cache (`@viaxe_v2` in AsyncStorage) — this is a real,
+// pre-existing gap in that cache (see LoginScreen.tsx, which never clears
+// it; only an explicit handleLogout in App.tsx does), not something this
+// test or its fixtures cause. A fresh profile per athlete sidesteps it and
+// keeps this test and athlete-journey.js's fixtures (Alice vs Bob, disjoint
+// dates) fully independent either way.
+//
 // Usage:  node test/browser/session-persistence.js
 'use strict';
 
